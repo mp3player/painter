@@ -7,20 +7,20 @@
       "sourceMap": true,
       "target": "ES6",
       "lib": ["ES6","DOM","ES2022.Array"],
-      "outDir": "./dist/"
+      "outDir": "../dist/"
     },
     "files": [
-        "collection.ts",
-        "event.ts",
-        "gjk.ts",
-        "noise.ts",
-        "painter.ts",
-        "shape.ts",
-        "style.ts",
-        "util.ts",
-        "vector.ts",
-        "helper.ts",
-        "pdf.ts",
-        "jpeg.ts"
+        "ts/collection.ts",
+        "ts/event.ts",
+        "ts/gjk.ts",
+        "ts/noise.ts",
+        "ts/painter.ts",
+        "ts/shape.ts",
+        "ts/style.ts",
+        "ts/util.ts",
+        "ts/vector.ts",
+        "ts/helper.ts",
+        "ts/pdf.ts",
+        "ts/jpeg.ts"
     ]
   }

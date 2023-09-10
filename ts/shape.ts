@@ -3,7 +3,6 @@ import { Box, Tool } from "./util.js";
 import { Matrix, Vector } from "./vector.js";
 import { Style } from './style.js'
 import { EventListener } from "./event.js";
-import { isArrayTypeNode } from "./node_modules/typescript/lib/typescript";
 
 
 enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , RECTANGLE , POLYGON , TEXT};
