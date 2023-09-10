@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+      "module": "ES6",
+      "noImplicitAny": true,
+      "removeComments": true,
+      "preserveConstEnums": true,
+      "sourceMap": true,
+      "target": "ES6",
+      "lib": ["ES6","DOM","ES2022.Array"],
+      "outDir": "./dist/"
+    },
+    "files": [
+        "collection.ts",
+        "event.ts",
+        "gjk.ts",
+        "noise.ts",
+        "painter.ts",
+        "shape.ts",
+        "style.ts",
+        "util.ts",
+        "vector.ts",
+        "helper.ts",
+        "pdf.ts",
+        "jpeg.ts"
+    ]
+  }
