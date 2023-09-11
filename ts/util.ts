@@ -178,7 +178,7 @@ class Tool{
         angles.shift();
 
 
-        // check if the point should be push into the stack 
+        // check if the point should be pushed into the stack 
         let push = (stack : Stack , vec : Vector ) => {
             if(stack.length < 2){
                 stack.push(vec);
@@ -258,11 +258,6 @@ class Tool{
     }
     
 
-
-
-
-    
-
     static DFT( singnal : Array< number  > ) : Array< number | Complex > {
         
         let _signal = new Array< Complex >();
@@ -339,10 +334,13 @@ class Tool{
         return _fft(_signal);
     } 
 
+    // TODO : discrete cosine transform algirithm 
     static DCT( signal : Array< number > , version : number = 1 ) {
+
         type dct = ( x : Array< number > )=>Array< number >
         let pow = Math.pow;
         let cos = Math.cos;
+
         let dct1 : dct = ( x ) => {
             let N = x.length;
             let X = new Array< number >();
@@ -372,31 +370,11 @@ class Tool{
         }
 
         let dct3 : dct = ( x ) => {
-            let N = x.length;
-            let X = new Array< number >();
-            let X0 = x[0] / 2;
-            X.push(X0);
-            for( let k = 1 ; k < x.length ; ++ k ){
-                let Xk = 0;
-                for( let n = 1; n < x.length ; ++ n ){
-                    Xk += x[n] * cos( Math.PI / N * ( k + .5 ) * n );
-                }
-                X.push( Xk );
-            }
-            return X;
+            return x;
         }
 
         let dct4 : dct = ( x ) => {
-            let N = x.length;
-            let X = new Array< number >();
-            for( let k = 0 ; k < x.length ; ++ k ){
-                let Xk = 0;
-                for( let n = 0 ; n < x.length ; ++ n ){
-                    Xk += x[n] * cos( Math.PI / N * ( k + .5 ) * ( n + .5 ) );
-                }
-                X.push( Xk );
-            }
-            return X;
+            return x;
         }
 
         switch( version ){
@@ -460,7 +438,7 @@ class Box{
         this.left = 0;
     }
 
-    updateBorder( top : number , right : number , bottom : number , left : number ){
+    updateBoundary( top : number , right : number , bottom : number , left : number ){
         if( top > this.top ) this.top = top;
         if( right > this.right ) this.right = right;
         if( bottom < this.bottom ) this.bottom = bottom;
