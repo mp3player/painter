@@ -28,3 +28,6 @@
         - painter listen the event 
         - checkout the leave of the tree 
         - emit the information to it's parent until the root node
+
+
++ collection : add tree structure
