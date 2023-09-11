@@ -187,8 +187,13 @@ class Painter extends Shape{
 
 isTouch = function( cache : ShapeCache , position : Vector ) : boolean {
 
-
+    
     if( cache.type == ShapeType.SHAPE ) return false; 
+
+    if( cache.type == ShapeType.PATH ){
+        return Tool.isPointInPath( cache.buffer._edge , position , 1 );
+    }
+
 
     if( cache.type == ShapeType.CIRCLE ){
         return Tool.IsPointInCircle( cache.buffer.center , cache.buffer.radius , position );
@@ -345,9 +350,9 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
 
             for(let i = 0 ; i < shape.points.length ; ++ i){
                 let vert = shape.points[i]
-                _edge.push( vert );
                 vert = vert.multiply( transformScreen );
                 edge.push(vert);
+                _edge.push( painter.convertToPainter( vert ) );
             }
 
             cache = { 
@@ -368,10 +373,11 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
             let _edge : Array< Vector > = new Array< Vector >();
             for(let i = 0 ; i < shape.vertexes.length ; ++ i){
                 let vert = shape.vertexes[i]
-                _edge.push( vert );
                 vert = vert.multiply( transformScreen );
                 edge.push( vert );
+                _edge.push( painter.convertToPainter( vert ) );
             }
+
             cache = { 
                 buffer : { 
                     edge , _edge 
@@ -637,7 +643,6 @@ invokeEvent = function( painter : Painter ) : void {
                 let prev = action.drag.prev.multiply( painter.inverseTransformScreen ).multiply( action.drag.target.inverseTransformWorld );
                 
                 let delta = current.sub( prev )
-                console.log( delta );
                 action.drag.target.translate( delta );
             
             }

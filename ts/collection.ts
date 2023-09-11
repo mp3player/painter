@@ -288,51 +288,273 @@ class Stack {
         this._length = 0;
     }
 }
-  
-interface TreeNode{
-    vlaue : any , 
-    left : any , 
-    right : any
+
+const defaultComparer : Function = ( a : any , b : any ) => {
+
+    if( a == b ) return 0;
+    else if( a < b ) return 1;
+    return -1;
+    
+}
+
+class TreeNode< T , S >{
+
+    public key : T ;
+    public value : S ;
+    public parent : TreeNode<T , S>  | null ;
+    public left : TreeNode<T , S > ;
+    public right : TreeNode<T , S> 
+    
+    constructor( key : T , value : S  ) {
+        this.key = key;
+        this.value = value ;
+        this.parent = null;
+        this.left = null;
+        this.right = null;
+    }
+
 };
 
-abstract class Tree {
+abstract class Tree<T , S> {
 
-    public root : TreeNode | null;
-    public _size : number;
+    public root : TreeNode<T , S> | null;
+
+
+    private comp : Function;
+    private _size : number;
+
     public get size( ){
         return this._size;
     }
 
-    constructor( ){
+    constructor( comp : Function = defaultComparer ){
+        this.root = null;
+        this.comp = comp;
+        this._size = 0;
+    }
+
+    add( key : T , value : S ) : boolean {
+
+        if( this.find( key ) != null ){
+            this.set( key , value );
+            return false;
+        }
+
+        if( this.root == null ) {
+            this.root = new TreeNode<T , S>( key , value );
+            return true;
+        }
+
+        let newNode : TreeNode<T , S> = new TreeNode<T , S>( key , value );
+        let node : TreeNode<T , S> = this.root;
+        let p : TreeNode<T , S> = node;
+        
+        while( node != null ){
+            p = node;
+            if( this.comp( newNode.key , node.key ) >= 0 ){
+                node = node.left;
+            }else{
+                node = node.right;
+            }
+        }
+
+        if( this.comp( newNode.key , p.key ) >= 0 ){
+            p.left = newNode;
+        }else{
+            p.right = newNode;
+        }
+        newNode.parent = newNode;
+        this._size += 1;
+        return true;
+
+    }
+
+    remove( key : T ) : boolean {
+        // remove the node & rebuild the tree 
+        // 1. the deleted node is a leaf node => delete this node directly
+        // 2. the deleted node is the root node => delete this node & set the root as null
+        // 3. the deleted node is a node with child and parent => delete this node & transplant
+
+        if( this._size <= 0 ) return false;
+
+        let node = this.find( key );
+        if( node == null ) return false;
+
+        if( node.left == null ){
+
+            // has no left child
+            this.transplant( node.right , node );
+
+        }else if( node.right == null ){
+
+            // has no right child
+            this.transplant( node.left , node );
+
+        }else{
+            // has both left and right child 
+            // the next must be a child of node
+            let next = this.next( node );
+            
+            if( next == null ){
+                // this node must have a next
+                throw Error('fatal error');
+            }else{
+                // the next has no left children;
+                // place the next.right at the next 
+                if( next != node.right ){
+                    this.transplant( next.right , next );
+                    next.right = node.right;
+                    next.parent = node.parent;
+                }
+                this.transplant( next ,node );
+                // replace the next with node
+                next.left = node.left;
+                node.left.parent = next;
+
+
+            }
+        }
+
+        this._size -= 1;
+
+    }
+
+    set( key : T , value : S ) : boolean {
+        let node = this.find( key );
+        if( node != null ){
+            node.value = value;
+            return true;
+        }
+        return false;
+    }
+
+    get( key : T ) : S {
+        let node = this.find( key );
+        if( node == null ) return null;
+        return node.value;
+    }
+
+    has( key : T ) : boolean {
+        let node = this.find( key );
+        return node != null;
+    }
+
+    // in-order traverse
+    keys() : Array< T > { 
+
+        let arr : Array< T > = new Array< T > ();
+
+        let fn : Function = ( node : TreeNode < T , S > ) => {
+            if( node == null ) return ;
+            
+            fn( node.left );
+            arr.push( node.key );
+            fn( node.right );
+        }
+        
+        fn( this.root );
+
+        return arr;
+
+    }
+
+    clear() : void {
         this.root = null;
         this._size = 0;
     }
 
-}
-
-class AVLTree extends Tree {
-
-    add( value : any ) : TreeNode {
+    // TODO : prevet hash occlide
+    private find( key : T ) : TreeNode <T , S> {
+        let node : TreeNode <T , S > = this.root;
+        while( node != null ){
+            if( node.key == key ) return node;
+            if( this.comp( key , node.key ) >= 0 ){
+                node = node.left;
+            }else{
+                node = node.right;
+            }
+        }
         return null;
     }
 
-    remove( value : any ) : boolean {
-        return false;
+    // WARNING : target.parent will disconnect with target
+    // this function will remove the tree whose root is target 
+    // and place the source at the position of target
+    private transplant( source : TreeNode<T , S> , target : TreeNode<T , S>  ) : void {
+        
+
+        
+        // transplant a node from source to target
+        // place source at target 
+
+        if( target.parent == null ){
+            // target is root
+            this.root = source;
+        }else if( target = target.parent.left ){
+            target.parent.left = source;
+        }else{
+            target.parent.right = source;
+        }
+
+        if( source != null)
+            source.parent = target.parent;
+        
     }
 
-    find( value : any ) : TreeNode {
-        return null;
+    private next( node : TreeNode<T , S> ) : TreeNode<T , S> {
+        
+        // the next is a node which is the smallest one but larger than this node.
+        // 1. the next of a node is the leftest in it's right child tree
+
+        // this node has right child
+        if( node.right != null ){
+            node = node.right;
+            while( node.left != null ){
+                node = node.left;
+            }
+        }else {
+            // this node has no right child
+            let p = node.parent;
+            while( p != null && node == p.left ){
+                node = p ;
+                p = node.parent;
+            }
+
+        }
+
+        return node;
+    }
+
+    private prev( node : TreeNode<T , S > ) : TreeNode<T , S>{
+        
+        // the prev of a node which is the largest one but smaller than this node
+        // 1. the prev of a node is the leftest node in it's left child tree
+        // 2. 
+        if( node.left != null ){
+            node = node.left;
+            while( node.right != null ){
+                node = node.right;
+            }
+        }else{
+            let p = node.parent;
+            while( p != null && p.right == node ){
+                node = p ;
+                p = node.parent;
+            }
+        }
+        return node;
+    }
+
+
+
+}
+
+class AVLTree<T , S> extends Tree<T , S> {
+
+    add( key : T , value : S ) : boolean  {
+        return super.add( key , value );
     }
 
 }
 
-class TreeMap extends Tree {
-
-    constructor(){
-        super();
-    }
-
-
-}
-
-export {LinkedList , ArrayList , Stack}
+export {LinkedList , ArrayList , Stack , Tree }

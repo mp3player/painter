@@ -7,7 +7,7 @@
       "sourceMap": true,
       "target": "ES6",
       "lib": ["ES6","DOM","ES2022.Array"],
-      "outDir": "../dist/"
+      "outDir": "./dist/"
     },
     "files": [
         "ts/collection.ts",

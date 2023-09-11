@@ -55,7 +55,30 @@ class Tool{
         return true;
     }
 
-    // TODO : this method can't process the rotation condition
+    static isPointInLine( p0 : Vector , p1 : Vector , point : Vector , eps = 1.0 ) : boolean {
+        if( p0.x == p1.x ){
+            // vertical line
+            let min = p0.y > p1.y ? p1.y : p0.y;
+            let max = p0.y > p1.y ? p0.y : p1.y;
+            let error = point.x - p0.x;
+            if( point.y > min && point.y < max && error * error < eps * eps ) return true;
+            return false; 
+        }
+        let k = ( p1.y - p0.y ) / ( p1.x - p0.x );
+        let b = p0.y - k * p0.x;
+        let y = k * point.x + b;
+        let error = y - point.y;
+        if( error * error < eps * eps )return true;
+        return false;
+    }
+
+    static isPointInPath( edge : Array< Vector > , point : Vector , eps = 1.0) : boolean {
+        for( let j = edge.length - 1 , i = 0 ; i < edge.length ; j = i++ ){
+            if( this.isPointInLine( edge[j] , edge[i] , point , eps ) ) return true;
+        }
+        return false;
+    }
+
     static IsPointInRect( edge : Array<Vector> , point : Vector ) : boolean {
 
         let left = edge[0].x , right = edge[0].x , top = edge[0].y , bottom = edge[0].y;
