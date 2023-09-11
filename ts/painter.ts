@@ -165,6 +165,7 @@ class Painter extends Shape{
         this.canvas.height = this.height;
         
         this.updateTransformPainter();
+        this.update()
 
 
     }

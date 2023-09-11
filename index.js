@@ -1,5 +1,5 @@
 import { Matrix, Vector , Complex } from "./dist/vector.js";
-import { ArrayList, LinkedList , Tree } from "./dist/collection.js";
+import { ArrayList, LinkedList , Tree , AVLTree } from "./dist/collection.js";
 import { Painter } from "./dist/painter.js";
 import { Circle, Convex, Path , Polygon, Rectangle , QuadraticBezierCurve, Arc, Shape , Text } from "./dist/shape.js";
 import { Tool } from "./dist/util.js";
@@ -37,7 +37,6 @@ painter.on('mouseup' , e => {
     e.target.style.lineWidth = 1;
 })
 
-center.translate( new Vector( 100 , 100  ) );
 
 let polygon = new Polygon([] , 0 , 0);
 polygon.append( new Vector(  0 , 0 ) )
@@ -54,27 +53,16 @@ path.style.background = null;
 
 painter.add( path );
 
-let tree = new Tree(( a , b ) => {
-    if( a == b ) return 0;
-    if( a > b ) return 1;
-    return -1;
-});
+let tree = new AVLTree();
 
-for( let i = 0 ; i < 10 ; ++ i ){
-    let key = Number.parseInt( Math.random() * 100 ) ;
+let keys = [7, 59, 4, 84, 50, 97, 27, 94, 24]
+for( let i = 0 ; i < 9 ; ++ i ){
+    let key = keys[i] ;
     let value = Math.random() * 10;
-    console.log( key , value )
-    if( tree.has( key ) ){
-        let arr = tree.get( key );
-        arr.push( value );
-    }else{
-        tree.add( key , [ value ] );
-    }
+    tree.add( key , value );
 }
-
-for( let str of tree.keys() ){
-    console.log( str ,  tree.get( str ) ) ;
-}
+console.log( tree )
+console.log( tree.keys() )
 
 let a = () => {
     

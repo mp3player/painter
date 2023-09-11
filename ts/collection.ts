@@ -303,7 +303,8 @@ class TreeNode< T , S >{
     public value : S ;
     public parent : TreeNode<T , S>  | null ;
     public left : TreeNode<T , S > ;
-    public right : TreeNode<T , S> 
+    public right : TreeNode<T , S> ;
+    public factor : number ;
     
     constructor( key : T , value : S  ) {
         this.key = key;
@@ -311,17 +312,19 @@ class TreeNode< T , S >{
         this.parent = null;
         this.left = null;
         this.right = null;
+        this.factor = null;
     }
 
 };
+
 
 abstract class Tree<T , S> {
 
     public root : TreeNode<T , S> | null;
 
 
-    private comp : Function;
-    private _size : number;
+    protected comp : Function;
+    protected _size : number;
 
     public get size( ){
         return this._size;
@@ -351,19 +354,19 @@ abstract class Tree<T , S> {
         
         while( node != null ){
             p = node;
-            if( this.comp( newNode.key , node.key ) >= 0 ){
+            if( this.comp( key , node.key ) >= 0 ){
                 node = node.left;
             }else{
                 node = node.right;
             }
         }
 
-        if( this.comp( newNode.key , p.key ) >= 0 ){
+        if( this.comp( key , p.key ) >= 0 ){
             p.left = newNode;
         }else{
             p.right = newNode;
         }
-        newNode.parent = newNode;
+        newNode.parent = p;
         this._size += 1;
         return true;
 
@@ -458,13 +461,30 @@ abstract class Tree<T , S> {
 
     }
 
+    lft() : Array< T > {
+        let nodes : Array< TreeNode<T , S> > = new Array< TreeNode<T , S> > ();
+        let keys : Array< T > = new Array< T >();
+    
+        nodes.push( this.root );
+
+        while( nodes.length > 0 ){
+            let node = nodes.splice(0,1)[0];
+            
+            if( node.left != null ) nodes.push( node.left );
+            if( node.right != null ) nodes.push( node.right );
+            keys.push( node.key );
+        }
+
+        return keys;
+    };
+
     clear() : void {
         this.root = null;
         this._size = 0;
     }
 
     // TODO : prevet hash occlide
-    private find( key : T ) : TreeNode <T , S> {
+    protected find( key : T ) : TreeNode <T , S> {
         let node : TreeNode <T , S > = this.root;
         while( node != null ){
             if( node.key == key ) return node;
@@ -480,7 +500,7 @@ abstract class Tree<T , S> {
     // WARNING : target.parent will disconnect with target
     // this function will remove the tree whose root is target 
     // and place the source at the position of target
-    private transplant( source : TreeNode<T , S> , target : TreeNode<T , S>  ) : void {
+    protected transplant( source : TreeNode<T , S> , target : TreeNode<T , S>  ) : void {
         
 
         
@@ -501,7 +521,7 @@ abstract class Tree<T , S> {
         
     }
 
-    private next( node : TreeNode<T , S> ) : TreeNode<T , S> {
+    protected next( node : TreeNode<T , S> ) : TreeNode<T , S> {
         
         // the next is a node which is the smallest one but larger than this node.
         // 1. the next of a node is the leftest in it's right child tree
@@ -525,7 +545,7 @@ abstract class Tree<T , S> {
         return node;
     }
 
-    private prev( node : TreeNode<T , S > ) : TreeNode<T , S>{
+    protected prev( node : TreeNode<T , S > ) : TreeNode<T , S>{
         
         // the prev of a node which is the largest one but smaller than this node
         // 1. the prev of a node is the leftest node in it's left child tree
@@ -552,9 +572,160 @@ abstract class Tree<T , S> {
 class AVLTree<T , S> extends Tree<T , S> {
 
     add( key : T , value : S ) : boolean  {
-        return super.add( key , value );
+        
+        if( super.has( key ) ){
+            super.set( key , value );
+            return false;
+        }
+
+        let newNode : TreeNode<T , S> = this.put( key , value );
+
+        // rebalance
+        // check wheter the newNode could break the balance
+        // update balance factor 
+        
+        let node : TreeNode<T , S> = newNode.parent;
+        while( node != null ){
+            let ld = this.depth( node.left );
+            let rd = this.depth( node.right );
+            node.factor = ld - rd;
+            if( node.factor <= -2 || node.factor >= 2 ){
+                this.rebalance( node );
+            }
+            node = node.parent;
+        }
+
+
+        return true;
+
     }
+
+    depth( node : TreeNode< T , S > ) : number {
+    
+        let fn : Function = ( node : TreeNode<T , S > ) : number => {
+            if( node == null ) return 0;
+
+            let lDepth = fn( node.left );
+            let rDepth = fn( node.right );
+            return lDepth > rDepth ? lDepth + 1 : rDepth + 1;
+        
+        }
+
+        return fn( node );
+    
+    }
+
+    rotateLeft( node : TreeNode<T , S> ) : void {
+        
+        let r : TreeNode<T , S> = node.right;
+
+        node.right = r.left;
+        if( r.left != null ){
+            r.left.parent = node;
+        }
+        
+        if( node.parent == null ){
+            this.root = r;
+        }else if ( node == node.parent.left ){
+            node.parent.left = r;
+        }else{
+            node.parent.right = r;
+        }
+        r.left = node;
+        r.parent = node.parent;
+        node.parent = r;
+
+    }
+
+    rotateRight( node : TreeNode<T , S> ) : void {
+        
+        let l : TreeNode<T , S> = node.left;
+
+        node.left = l.right;
+        if( l.right != null ){
+            l.right.parent = node;
+        }
+        
+        if( node.parent == null ){
+            this.root = l;
+        }else if( node == node.parent.left ){
+            node.parent.left = l;
+        }else{
+            node.parent.right = l;
+        }
+
+        l.parent = node.parent;
+        l.right = node;
+        node.parent = l;
+
+
+    }
+
+    rebalance( node : TreeNode<T , S> ) : void {
+
+        if( node.factor >= 2 ){
+            // the depth of left is lager than the right
+            
+            if( node.left.factor > 0 ){
+                // condition 1 : left + left
+                this.rotateRight( node );
+            } else{
+                // condition 2 : left + right
+                this.rotateLeft( node.left );
+                this.rotateRight( node );
+            }
+            
+        }else if( node.factor <= -2 ){
+            // the depth of right is lager than the left
+            if( node.right.factor < 0 ){
+                // condition 1 : right + right;
+                this.rotateLeft( node );
+            }else{
+                // condition 2 : right + left ;
+                this.rotateRight( node.right );
+                this.rotateLeft( node );
+            }
+            
+            
+        }
+        // TODO : update the factor of node which is moved
+        node.factor = this.depth( node.left ) - this.depth( node.right );
+
+    }
+
+    // add the node to the tree and keep it balance
+    private put( key : T , value : S ) : TreeNode<T , S > {
+        
+        let newNode : TreeNode<T , S> = new TreeNode<T , S>( key , value );
+
+        if( this.root == null ){
+            this.root = newNode;
+            return newNode;
+        }
+
+        let node : TreeNode<T , S> = this.root;
+        let p : TreeNode<T , S>;
+        while( node != null ){
+            p = node;
+            if( this.comp( key , node.key ) >= 0 ){
+                node = node.left;
+            }else{
+                node = node.right;
+            }
+        }
+
+        if( this.comp( key , p.key ) >= 0 ){
+            p.left = newNode;
+        }else{
+            p.right = newNode;
+        }
+        newNode.parent = p;
+        newNode.factor = 0;
+        return newNode;
+
+    }
+
 
 }
 
-export {LinkedList , ArrayList , Stack , Tree }
+export {LinkedList , ArrayList , Stack , Tree , AVLTree }
