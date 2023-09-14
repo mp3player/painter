@@ -1,5 +1,5 @@
-import { MouseEventType, MouseActiveEvent, ActiveEvent } from "./event.js";
-import {  Arc, Circle , Rectangle, Shape , ShapeType } from "./shape.js";
+import { MouseActiveEvent, ActiveEvent, EventType } from "./event.js";
+import { Arc, Circle , Polygon, Rectangle, Shape , ShapeType, Text } from "./shape.js";
 import { Color, Style } from "./style.js";
 import { Matrix, Vector } from "./vector.js";
 import { Tool } from "./util.js";
@@ -24,22 +24,32 @@ import { Tool } from "./util.js";
  */
 
 
-let isTouch : Function;
-let bufferShape : Function ;
-let bufferChildren: Function;
-let render : Function;
-let drawArc : Function;
-let drawRectange : Function;
-let drawPolygon : Function;
-let drawPath : Function;
-let drawText : Function;
-let invokeEvent : Function;
+let isTouch : ( cache : ShapeCache , position : Vector ) => boolean;
+let bufferShape : ( transform : Matrix , shape : any , painter : Painter ) => void ;
+let bufferChildren: ( transform : Matrix , shape : Shape , painter : Painter ) => void;
+let render : ( painter : Painter  ) => void;
+let drawArc : ( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) => void;
+let drawRectange : ( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) => void ;
+let drawPolygon : ( pen : CanvasRenderingContext2D , cache : ShapeCache, style : Style  ) => void;
+let drawPath : ( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) => void;
+let drawText : ( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) => void;
+let renderBox : ( pen : CanvasRenderingContext2D ,  cache : ShapeCache ) => void;
+let invokeEvent : ( painter : Painter ) => void;
 
+
+const DashColor = 'rgba(0,0,0,.8)'
+const DashWidth = 2;
 
 interface ShapeCache {
-    ref : Shape ,
+    world : Matrix,
+    ref : Shape | Rectangle | Arc | Circle | Polygon | Text ,
     type : ShapeType , 
     buffer : any
+};
+
+interface HelperCache {
+    ref : Shape , 
+    world : Matrix ,
 };
 
 const FrontBuffer : Map< string , ShapeCache > = new Map< string , ShapeCache >();
@@ -49,7 +59,8 @@ const BackBuffer : Map< String , ShapeCache > = new Map< string , ShapeCache >()
 // the OrderedBuffer should be a binary tree
 const OrderedBuffer : Array< ShapeCache > = new Array< ShapeCache > ();
 
-console.log( OrderedBuffer )
+const HelperBuffer : Array< HelperCache > = new Array< HelperCache > ();
+
 
 
 class Painter extends Shape{
@@ -131,8 +142,6 @@ class Painter extends Shape{
         this.pen.restore();
     }
 
-
-
     // update coordinateTransform
     updateTransformPainter() : void {
         // transform matrix apply to the painter
@@ -188,6 +197,9 @@ class Painter extends Shape{
 
 isTouch = function( cache : ShapeCache , position : Vector ) : boolean {
 
+    if( cache.type == ShapeType.ELLIPSE ) return false;
+
+    if( cache.type == ShapeType.TEXT ) return false;
     
     if( cache.type == ShapeType.SHAPE ) return false; 
 
@@ -219,7 +231,7 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
 
     if( shape.needUpdate ) shape.update(); 
 
-    let shapeType = shape.getShapeType();
+    let shapeType = shape.shapeType;
     let cache = null;
 
     switch ( shapeType ){
@@ -256,11 +268,12 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
             ];
 
             cache = { 
+                world : transformScreen ,
                 buffer : { 
                     edge , _edge
                 } , 
                 ref : shape , 
-                type : ShapeType.RECTANGLE 
+                type : shapeType 
             };
     
         }break;
@@ -329,6 +342,7 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
             }
             
             cache = { 
+                world : transformScreen ,
                 buffer : { 
                     center : shape.center , 
                     radius : shape.radius ,
@@ -337,7 +351,39 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
                     edge 
                 } , 
                 ref : shape , 
-                type : ShapeType.CIRCLE
+                type : shapeType
+            };
+
+        }break;
+
+        case ShapeType.ELLIPSE : {
+
+            let a = shape.a , b = shape.b;
+            let mat = new Matrix( a, 0, 0, 0, b, 0, 0, 0, 1 );
+            let transformScreen = Matrix.multiply( transform , shape.transformShapeWorld );
+            transformScreen = Matrix.multiply( transformScreen , mat );
+
+            let startAngle = 0;
+            let endAngle = Math.PI * 2;
+            let step = ( endAngle - startAngle ) / 100;
+            let edge : Array< Vector > = new Array< Vector >();
+            let _edge : Array< Vector > = new Array< Vector >();
+
+            for( let i = startAngle ; i < endAngle ; i += step ){
+                let x = Math.cos( i ) , y = Math.sin( i );
+                let vert = new Vector( x , y ).multiply( transformScreen )
+                edge.push( vert );
+            }
+
+            cache = { 
+                world : transformScreen ,
+                buffer : { 
+                    a : shape.a ,
+                    b : shape.b,
+                    edge ,
+                } , 
+                ref : shape , 
+                type : shapeType
             };
 
         }break;
@@ -357,11 +403,12 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
             }
 
             cache = { 
+                world : transformScreen ,
                 buffer : { 
                     edge , _edge 
                 } , 
                 ref : shape , 
-                type :ShapeType.PATH 
+                type : shapeType
             };
 
         }break;
@@ -380,18 +427,38 @@ bufferShape = function( transform : Matrix , shape : any , painter : Painter ) :
             }
 
             cache = { 
+                world : transformScreen ,
                 buffer : { 
                     edge , _edge 
                 } , 
                 ref : shape , 
-                type : ShapeType.POLYGON 
+                type : shapeType
             };
 
         }break;
         
+        case ShapeType.TEXT : {
+            let transformScreen = Matrix.multiply( transform , shape.transformShapeWorld );
+
+            let font = 'bold ' + shape.size + 'px ' + shape.family;
+
+            cache = {
+                world : transformScreen ,
+                buffer : {
+                    text : shape.text , 
+                    font ,
+                    position : shape.center.multiply( transformScreen )
+                },
+                ref : shape ,
+                type : shapeType
+            }
+
+        }break
+
         case ShapeType.SHAPE:{
 
             cache = { 
+                world : new Matrix(),
                 buffer : { 
                     edge : null 
                 } , 
@@ -421,8 +488,9 @@ bufferChildren = function( transform : Matrix , shape : Shape , painter : Painte
 
 }
 
-drawArc = function ( pen : CanvasRenderingContext2D , buffer : any , style : Style ) : void {
+drawArc = function ( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) : void {
 
+    let buffer = cache.buffer;
     if( buffer.edge.length <= 0 ) return ;
 
     pen.save();
@@ -435,16 +503,18 @@ drawArc = function ( pen : CanvasRenderingContext2D , buffer : any , style : Sty
     for(let i = 0 ; i < buffer.edge.length ; ++ i){
         pen.lineTo( buffer.edge[i].x , buffer.edge[i].y );
     }
+
     // pen.arc( buffer.center.x , buffer.center.y , buffer.radius , buffer.startAngle , buffer.endAngle );
-
+    
     Style.setRender( pen , style );
-
-
     pen.restore();
 
+    renderBox( pen , cache );
 }
 
-drawRectange = function( pen : CanvasRenderingContext2D , buffer : any , style : Style ) : void {
+drawRectange = function( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) : void {
+
+    let buffer = cache.buffer;
 
     pen.save();
     
@@ -463,8 +533,9 @@ drawRectange = function( pen : CanvasRenderingContext2D , buffer : any , style :
 
 }
 
-drawPolygon = function( pen : CanvasRenderingContext2D , buffer : any, style : Style  ) : void {
+drawPolygon = function( pen : CanvasRenderingContext2D , cache : ShapeCache, style : Style  ) : void {
 
+    let buffer = cache.buffer;
     if( buffer.edge.length <= 0 ) return ;
 
     pen.save();
@@ -484,10 +555,13 @@ drawPolygon = function( pen : CanvasRenderingContext2D , buffer : any, style : S
     Style.setRender( pen , style);
 
     pen.restore();
+
+    renderBox( pen , cache );
 }
 
-drawPath = function( pen : CanvasRenderingContext2D , buffer : any , style : Style ) : void {
+drawPath = function( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) : void {
 
+    let buffer = cache.buffer;
     if( buffer.edge.length <= 0) return ;
 
     pen.save();
@@ -507,17 +581,54 @@ drawPath = function( pen : CanvasRenderingContext2D , buffer : any , style : Sty
 
 }
 
-drawText = function( pen : CanvasRenderingContext2D , buffer : any , style : Style ) : void {
+drawText = function( pen : CanvasRenderingContext2D , cache : ShapeCache , style : Style ) : void {
 
-    let center = buffer.center;
+    pen.save();
+    pen.beginPath();
+    let buffer = cache.buffer;
+    let position = buffer.position;
+    let font = cache.buffer.font;
     // this.pen.font()
-    pen.font = "bold 48px serif";
+    pen.font = font;
     // this.pen.textBaseline = 
-    pen.fillText(buffer.text , 0,10  );
+    pen.fillText( buffer.text , position.x , position.y );
     pen.fill();
+    pen.closePath();
+    pen.restore();
+
 }
 
-render = function( painter : Painter  ){
+renderBox = function( pen : CanvasRenderingContext2D ,  cache : ShapeCache ) : void {
+    // console.log( cache )
+    let transform = cache.world;
+    let box = cache.ref.box;
+    
+    let lt = new Vector( box.left , box.top ).multiply( transform );
+    let rb = new Vector( box.right , box.bottom ).multiply( transform );
+
+    let left = lt.x , top = lt.y;
+    let right = rb.x , bottom = rb.y;
+
+    pen.save();
+
+    pen.beginPath();
+    pen.strokeStyle = DashColor;
+    pen.lineWidth = DashWidth;
+    pen.setLineDash([5,5])
+    pen.moveTo( left , top );
+    pen.lineTo( right , top );
+    pen.lineTo( right , bottom );
+    pen.lineTo( left , bottom );
+    pen.closePath();
+    pen.stroke();
+    
+
+    pen.restore();
+
+
+}
+
+render = function( painter : Painter  ) : void {
     
     FrontBuffer.clear();
     OrderedBuffer.length = 0;
@@ -538,24 +649,32 @@ render = function( painter : Painter  ){
         switch( shapeBuffer.type ){
             
             case ShapeType.ARC : {
-                drawArc( painter.pen , shapeBuffer.buffer , shapeBuffer.ref.style );
+                drawArc( painter.pen , shapeBuffer , shapeBuffer.ref.style );
             }break;
             
             case ShapeType.CIRCLE : {
-                drawArc( painter.pen , shapeBuffer.buffer , shapeBuffer.ref.style )
+                drawArc( painter.pen , shapeBuffer , shapeBuffer.ref.style )
             }break;
             
+            case ShapeType.ELLIPSE : {
+                drawPolygon( painter.pen , shapeBuffer , shapeBuffer.ref.style );
+            }
+
             case ShapeType.RECTANGLE : {
-                drawRectange( painter.pen , shapeBuffer.buffer , shapeBuffer.ref.style );
+                drawRectange( painter.pen , shapeBuffer , shapeBuffer.ref.style );
             }break;
             
             case ShapeType.POLYGON : {
-                drawPolygon( painter.pen , shapeBuffer.buffer , shapeBuffer.ref.style );
+                drawPolygon( painter.pen , shapeBuffer , shapeBuffer.ref.style );
             }break;
 
             case ShapeType.PATH : {
-                drawPath( painter.pen , shapeBuffer.buffer , shapeBuffer.ref.style );
-            }
+                drawPath( painter.pen , shapeBuffer , shapeBuffer.ref.style );
+            }break;
+
+            case ShapeType.TEXT : {
+                drawText( painter.pen , shapeBuffer , shapeBuffer.ref.style );
+            }break;
 
         }
     } )
@@ -589,12 +708,12 @@ invokeEvent = function( painter : Painter ) : void {
     // shape上层没有东西
     let eventHandler = ( name : string , e : MouseEvent ) => {
 
-        let event : ActiveEvent = null;
+        let event : ActiveEvent = new MouseActiveEvent( e , name , action.location );;
 
         action.screen = new Vector( e.x , e.y );
         action.location = painter.convertToPainter( action.screen );
         action.drag.current = action.screen;
-        action.target = this;
+        action.target = painter;
 
         interface _Temp {
             index : number ,
@@ -602,12 +721,11 @@ invokeEvent = function( painter : Painter ) : void {
         };
 
         let path : Array< _Temp >  = new Array< _Temp >();
+
         // touch checking
         for( let i = OrderedBuffer.length - 1 ; i >= 0 ; --i ){
             let cache = OrderedBuffer[ i ];
-
             let touched = isTouch( cache , action.location );
-
             if( touched ){
                 path.push( { index : cache.ref.index , shape : cache.ref } );
             }
@@ -619,26 +737,28 @@ invokeEvent = function( painter : Painter ) : void {
 
         let top : _Temp = path[0];
         let topTarget : Shape = top.shape ;
-
+        
+        
         for( let i = 0 ; i < path.length ; ++ i ){
             top = path[i];
             let target = top.shape;
             if( target.hasEvent( name ) ){
-                event = new MouseActiveEvent( e , MouseEventType.MOUSEDOWN , action.location );
+                
                 event.target = topTarget;
                 target.trigger( name , event );
                 break;
+
             }
         }
 
         // default function
         if( name == 'mousedown' ){
-            
+
+            action.mouseDown = true;
             action.drag.target = event.target;
 
         }else if( name == 'mousemove' ){
-
-            if( action.drag.target != fake ){
+            if( action.drag.target != null &&  action.drag.target != fake ){
 
                 let current = action.drag.current.multiply( painter.inverseTransformScreen ).multiply( action.drag.target.inverseTransformWorld );
                 let prev = action.drag.prev.multiply( painter.inverseTransformScreen ).multiply( action.drag.target.inverseTransformWorld );

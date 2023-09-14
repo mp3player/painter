@@ -5,7 +5,7 @@ import { Style } from './style.js'
 import { EventListener } from "./event.js";
 
 
-enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , RECTANGLE , POLYGON , TEXT};
+enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT};
 
 
 
@@ -48,6 +48,8 @@ class Shape extends EventListener {
     public get uuid() { return this._uuid ; };
 
     public get needUpdate() { return this._shapeNeedUpdate || this._transformNeedUpdate ; }
+
+    public get shapeType() { return ShapeType.SHAPE; }
 
 
     constructor( x = 0 , y = 0 ){
@@ -142,9 +144,7 @@ class Shape extends EventListener {
         return null;
     }
 
-    getShapeType() : ShapeType {
-        return ShapeType.SHAPE;
-    }
+
 
     // TODO : which is need to be overrieded according to the shape data  
     updateBox() : void {}
@@ -234,6 +234,8 @@ class Path extends Shape {
 
     protected points : Array<Vector>;
 
+    public get shapeType() { return ShapeType.PATH; }
+
     constructor(x = 0 , y = 0 ){
         super( x , y );
         this.points = new Array<Vector>();
@@ -248,10 +250,6 @@ class Path extends Shape {
     // override
     updateBox() : void { }
 
-    getShapeType() : ShapeType{
-        return ShapeType.PATH;
-    }
-
 }
 
 class Arc extends Shape {
@@ -261,6 +259,8 @@ class Arc extends Shape {
     private radius : number; 
     private startAngle : number ;
     private endAngle : number;
+
+    public get shapeType() { return ShapeType.ARC; }
 
     constructor( startAngle : number = 0.0 , endAngle : number = 100.0 , radius : number = 100 , x = 0 , y = 0){
         super(x,y);
@@ -284,28 +284,44 @@ class Arc extends Shape {
 
     }
 
-    getShapeType() : ShapeType{
-        return ShapeType.ARC;
-    }
-
 }
 
 class Circle extends Arc{
+
+    public get shapeType() { return ShapeType.CIRCLE; }
 
     constructor( r = 1 ,  x = 0 , y = 0 ){
         super(0 , 360 , r , x , y);
     }
 
 
-    getShapeType(): ShapeType {
-        return ShapeType.CIRCLE;
-    }
 }
+
+class Ellipse extends Shape {
+
+    public a : number;
+    public b : number;
+
+    public get shapeType() { return ShapeType.ELLIPSE; }
+
+    constructor( a = 1 , b = 1 , x = 0 , y = 0 ){
+        super( x , y );
+        this.a = a;
+        this.b = b;
+    }
+
+    updateBox() : void {
+        super.updateBox();
+    }
+
+};
 
 class Rectangle extends Shape{
 
     public width : number;
     public height : number;
+
+    public get shapeType() { return ShapeType.RECTANGLE; }
 
     constructor( width : number , height : number , x = 0 , y = 0 ){
         super(x,y);
@@ -313,9 +329,6 @@ class Rectangle extends Shape{
         this.height = height;
     }
 
-    getShapeType() : ShapeType {
-        return ShapeType.RECTANGLE;
-    }
 
     updateBox(): void {
         this.box.left = -this.width / 2;
@@ -330,6 +343,8 @@ class Polygon extends Shape{
     
     protected vertexes : Array<Vector>;
 
+    public get shapeType() { return ShapeType.POLYGON; }
+
     constructor( vertexes : Array<Vector> , x = 0 , y = 0 ){
         super(x , y);
         this.vertexes = vertexes;
@@ -340,10 +355,6 @@ class Polygon extends Shape{
         this.vertexes.push( vertex );
         this._shapeNeedUpdate = true;
 
-    }
-
-    getShapeType() : ShapeType {
-        return ShapeType.POLYGON;
     }
 
     updateBox(): void {
@@ -386,8 +397,41 @@ class QuadraticBezierCurve extends Path{
 }
 
 class Text extends Shape {
+    
     public text : string ;
     public fontSize : number;
+    public _size : number ;
+    public _family : string;
+
+    public _baseline : string ;
+
+    public get shapeType() { return ShapeType.TEXT; }
+
+    public get size(){ return this._size ;}
+
+    public get fontFamily(){ return this._family; }
+
+    public get baseline(){
+        return this._baseline;
+    }
+
+    public set size( size : number ) { 
+        this._size = size;
+        this._shapeNeedUpdate = true;
+    }
+
+    public set baseline( _baseline : string ) { 
+        this._baseline = _baseline ;
+    }
+
+    public set fontFamily( family : string ) { 
+        this._family = family;
+        this._shapeNeedUpdate = true;
+    }
+
+
+
+
     
     constructor( text : string , x : number , y : number ){
         super( x , y );
@@ -398,4 +442,4 @@ class Text extends Shape {
 }
 
 
-export { Shape , Path , Arc , Circle , Rectangle , Polygon , Convex , QuadraticBezierCurve , ShapeType ,Text }
+export { Shape , Path , Arc , Circle , Ellipse , Rectangle , Polygon , Convex , QuadraticBezierCurve , ShapeType ,Text }

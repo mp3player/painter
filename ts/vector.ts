@@ -284,6 +284,7 @@ class Matrix{
         return new Matrix( ...this.data );
     }
 
+
     /**
      * 0 , 3 , 6
      * 1 , 4 , 7
@@ -351,7 +352,10 @@ class Matrix{
         return res;
     }
 
-
+    static linearTransform( mat : Matrix ) : Matrix {
+        let d0 = mat.data[0] , d1 = mat.data[1] , d3 = mat.data[3] , d4 = mat.data[4];3
+        return new Matrix( d0 , d1 , 0 , d3 , d4 , 0 , 0 , 0 , 1 );
+    }
 
 }
 

@@ -53,28 +53,41 @@ class Tool{
         if(dis > radius * radius)
             return false;
         return true;
+
+    }
+
+    static IsPoingInEllipse( a : number , b : number , point : Vector ) : boolean {
+        return false;
     }
 
     static isPointInLine( p0 : Vector , p1 : Vector , point : Vector , eps = 1.0 ) : boolean {
+
         if( p0.x == p1.x ){
             // vertical line
             let min = p0.y > p1.y ? p1.y : p0.y;
             let max = p0.y > p1.y ? p0.y : p1.y;
-            let error = point.x - p0.x;
-            if( point.y > min && point.y < max && error * error < eps * eps ) return true;
+            if( point.y > min - eps && point.y < max + eps && point.x > p0.x - eps && point.y < p0.x - eps ) return true;
             return false; 
         }
+
+        let min = p0.x > p1.x ? p1.x : p0.x;
+        let max = p0.x > p1.x ? p0.x : p1.x;
+
+        if( point.x < min - eps || point.y > max + eps  ) return false;
+
         let k = ( p1.y - p0.y ) / ( p1.x - p0.x );
         let b = p0.y - k * p0.x;
         let y = k * point.x + b;
         let error = y - point.y;
         if( error * error < eps * eps )return true;
+
         return false;
+
     }
 
     static isPointInPath( edge : Array< Vector > , point : Vector , eps = 1.0) : boolean {
-        for( let j = edge.length - 1 , i = 0 ; i < edge.length ; j = i++ ){
-            if( this.isPointInLine( edge[j] , edge[i] , point , eps ) ) return true;
+        for( let i = 1 ; i < edge.length ; ++i ){
+            if( this.isPointInLine( edge[ i - 1 ] , edge[i] , point , eps ) ) return true;
         }
         return false;
     }
@@ -383,7 +396,6 @@ class Tool{
             case 3 : return dct3( signal );
             case 4 : return dct4( signal );
         }
-
 
     }
 

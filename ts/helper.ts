@@ -1,7 +1,7 @@
 import { Shape } from "./shape"
 
 
-class Helper {
+abstract class Helper {
 
     protected _shape : Shape;
 
@@ -12,9 +12,11 @@ class Helper {
     constructor( shape : Shape ){
         this._shape = shape;
     }
+
 }
 
 class BoxHelper extends Helper {
+
     constructor( shape : Shape ){
         super(shape);
     }

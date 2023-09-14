@@ -1,7 +1,16 @@
 import { Vector } from "./vector.js";
 
-enum MouseEventType { UNKNOW , MOUSEDOWN , MOUSEUP , MOUSEMOVE , MOUSEWHEEL };
-enum KeyEventType { UNKNOW , KEY_DOWN , KEY_UP };
+class EventType { 
+
+    static UNKNOW = 'unknow' ; 
+    static MOUSEDOWN = 'mousedown' ;
+    static MOUSEUP = 'mouseup' ;
+    static MOUSEMOVE = 'mousemove' ; 
+    static MOUSEWHEEL = 'mousewheel' ;
+    static MOUSEENTER = 'mouseenter' ;
+    static MOUSELEAVE = 'mouseleave'
+
+};
 
 abstract class ActiveEvent {
     protected  _originEvent : UIEvent;
@@ -22,8 +31,7 @@ abstract class ActiveEvent {
 // read-only properties
 class MouseActiveEvent extends ActiveEvent{
 
-    
-    private _name : MouseEventType;               // the name  
+    private _name : EventType;               // the name  
     private _painterLocation : Vector;
     private _screenLocation : Vector ;
     public paths : Array< EventListener >
@@ -44,10 +52,9 @@ class MouseActiveEvent extends ActiveEvent{
         return this._originEvent;
     }
 
-
     constructor(
         event : MouseEvent | null ,
-        name = MouseEventType.UNKNOW , 
+        name = EventType.UNKNOW , 
         location : Vector
     ){
         super( event )
@@ -97,4 +104,4 @@ class EventListener{
 }
 
 
-export { ActiveEvent ,  MouseActiveEvent , EventListener , MouseEventType , KeyEventType }
+export { ActiveEvent ,  MouseActiveEvent , EventListener  , EventType }
