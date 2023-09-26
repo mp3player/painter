@@ -740,6 +740,7 @@ invokeEvent = function( painter : Painter ) : void {
         
         
         for( let i = 0 ; i < path.length ; ++ i ){
+            
             top = path[i];
             let target = top.shape;
             if( target.hasEvent( name ) ){
@@ -758,6 +759,7 @@ invokeEvent = function( painter : Painter ) : void {
             action.drag.target = topTarget;
 
         }else if( name == 'mousemove' ){
+
             if( action.drag.target != null &&  action.drag.target != fake ){
 
                 let current = action.drag.current.multiply( painter.inverseTransformScreen ).multiply( action.drag.target.inverseTransformWorld );
@@ -769,7 +771,9 @@ invokeEvent = function( painter : Painter ) : void {
             }
 
         }else if( name == 'mouseup' ){
+
             action.drag.target = fake;
+
         }
 
         action.drag.prev = action.drag.current;
