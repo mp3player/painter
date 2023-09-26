@@ -1,4 +1,9 @@
 
+
+const cos = Math.cos;
+const sin = Math.sin;
+const PI = Math.PI;
+
 // marker1 <type1> [length2]
 const MARKER = 0xff;
 const SOI = 0xD8;       // start of image
@@ -27,6 +32,41 @@ const APP7 = 0xE7       // application-spedific
 const COM = 0xFE        // comment
 const EOI = 0xD9        // end of image
 
+
+class Block {
+    
+    public N : number;
+    public buffer : Float32Array;
+
+    constructor( N : number ){
+        this.N = N;
+        this.buffer = new Float32Array ( N * N );
+    }
+
+    get( x : number , y : number ) : number {
+        return this.buffer[ y * this.N + x ];
+    }
+
+    set( x : number , y : number , value : number ) : void {
+        this.buffer[ y * this.N + x ] = value;
+    }
+
+};
+
+let dct : ( buffer : Block ) => Block;
+let idct : ( buffer : Block ) => Block;
+
+let dct1 : ( buffer : Block ) => Block;
+let dct2 : ( buffer : Block ) => Block;
+let dct3 : ( buffer : Block ) => Block;
+let dct4 : ( buffer : Block ) => Block;
+
+let idct1 : ( buffer : Block ) => Block;
+let idct2 : ( buffer : Block ) => Block;
+let idct3 : ( buffer : Block ) => Block;
+let idct4 : ( buffer : Block ) => Block;
+
+
 class JPEG {
 
     static readJPEG( fileName : string ) : void {
@@ -42,6 +82,48 @@ class JPEG {
             })
     }
 };
+
+
+dct = function( buffer : Block ) : Block {
+
+    let N = buffer.N;
+
+    let freq = new Block( N );
+
+    for( let i = 0 ; i < N ; ++ i ){
+        for( let j = 0 ; j < N ; ++ j ){
+            
+            let value = 0;
+
+            for( let x = 0 ; x < N ; ++ x ){
+                for( let y = 0 ; y < N ; ++ y ){
+
+                    value += buffer.get( x , y ) 
+                        * cos( PI / N * ( x + .5 ) * i )
+                        * cos( PI / N * ( y + .5 ) * j );
+                    
+                }
+            }
+
+            freq.set( i , j , value );
+
+        }
+    }
+
+
+    return freq;
+}
+
+
+idct = function( buffer : Block ) : Block {
+
+    let N = buffer.N;
+
+    let time = new Block( N );
+
+    return buffer;
+
+}
 
 
 export { JPEG }

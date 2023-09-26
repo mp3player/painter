@@ -1,5 +1,5 @@
 import { Matrix, Vector , Complex } from "./dist/vector.js";
-import { ArrayList, LinkedList , Tree , AVLTree } from "./dist/collection.js";
+import { ArrayList, LinkedList } from "./dist/collection.js";
 import { Painter } from "./dist/painter.js";
 import { Circle , Ellipse, Convex, Path , Polygon, Rectangle , QuadraticBezierCurve, Arc, Shape , Text } from "./dist/shape.js";
 import { Tool } from "./dist/util.js";
@@ -23,7 +23,7 @@ let rect = new Rectangle(20,20,200,300);
 rect.style.background = 'rgba(0,0,0,.4)'
 
 
-painter.add( center );
+// painter.add( center );
 painter.add( rect );
 
 center.index = 10;
@@ -48,9 +48,11 @@ polygon.append( new Vector(  100,-300) )
 rect.add( polygon )
 
 let path = new Path();
-path.append( new Vector( 200 , 200 ) )
-path.append( new Vector( 300 , 300 ) )
-path.append( new Vector( 200 , 300 ) )
+
+for( let i = 0 ; i < 8 * Math.PI / 18.0  ; i += .001 ){
+    path.append( new Vector( i * 10 , Math.log( Math.tan( i / 2 + Math.PI / 4 ) ) * 10 ) );
+}
+
 path.style.background = null;
 
 painter.add( path );
@@ -67,12 +69,9 @@ text.size = 20;
 
 center.setScale( 1 , .5 )
 
-let width = innerWidth / 2 , height = innerHeight / 2;
-
 let ellipse = new Ellipse( 50 ,100 , 100 , 100 );
-painter.add( ellipse );
+// painter.add( ellipse );
 
-ellipse.translate(new Vector( 0 , 200 ) );
 
 let a = () => {
     

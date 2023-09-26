@@ -755,7 +755,10 @@ invokeEvent = function( painter : Painter ) : void {
         if( name == 'mousedown' ){
 
             action.mouseDown = true;
-            action.drag.target = event.target;
+            if( event.target && event.target.dragable )
+                action.drag.target = event.target;
+        
+            console.log( event.target )
 
         }else if( name == 'mousemove' ){
             if( action.drag.target != null &&  action.drag.target != fake ){
