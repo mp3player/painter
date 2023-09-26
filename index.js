@@ -28,16 +28,21 @@ painter.add( rect );
 
 center.index = 10;
 
-
-// painter.on('mousemove',e => {
-//     e.target.style.color = 'blue';
-//     e.target.style.lineWidth = 4;
+// painter.on('mousedown' , e => {
+//     console.log(e)
 // })
 
-// painter.on('mouseup' , e => {
-//     e.target.style.color = 'rgba(0,0,0,.2)'
-//     e.target.style.lineWidth = 1;
-// })
+
+painter.on('mousemove',e => {
+    // e.target.style.color = 'blue';
+    // e.target.style.lineWidth = 4;
+})
+
+
+painter.on('mouseup' , e => {
+    // e.target.style.color = 'rgba(0,0,0,.2)'
+    // e.target.style.lineWidth = 1;
+})
 
 
 let polygon = new Polygon([] , 0 , 0);
