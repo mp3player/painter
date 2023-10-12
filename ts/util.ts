@@ -192,7 +192,7 @@ class Tool{
 
 
         // check if the point should be pushed into the stack 
-        let push = (stack : Stack , vec : Vector ) => {
+        let push = (stack : Stack<any> , vec : Vector ) => {
             if(stack.length < 2){
                 stack.push(vec);
                 return ;

@@ -1,39 +1,41 @@
 
 
-class Node{
-    private _element: any = null;
-    private _prev: Node | null = null;
-    private _next: Node | null = null;
+// TODO finish template
+
+class Node< T >{
+    private _element: T = null;
+    private _prev: Node<T> | null = null;
+    private _next: Node<T> | null = null;
 
     public get element(): any {
         return this._element;
     }
-    public set element(value: any) {
+    public set element(value: T) {
         this._element = value;
     }
 
-    public get prev(): Node | null {
+    public get prev(): Node<T> | null {
         return this._prev;
     }
-    public set prev(value: Node | null) {
+    public set prev(value: Node<T> | null) {
         this._prev = value;
     }
 
-    public get next(): Node | null {
+    public get next(): Node<T> | null {
         return this._next;
     }
-    public set next(value: Node | null) {
+    public set next(value: Node<T> | null) {
         this._next = value;
     }
 
     
-    constructor(value : any){
+    constructor(value : T){
         this.element = value;
     }
 }
 
 // Sequential Colllection
-abstract class List{
+abstract class List < T >{
 
     protected _length: number = 0;
 
@@ -41,10 +43,10 @@ abstract class List{
         return this._length;
     }
     // add
-    abstract add(v : any) : void
+    abstract add(v : T) : void
 
     //insert
-    abstract insert( i : number , v : any ) : void
+    abstract insert( i : number , v : T ) : void
 
     // delete
     abstract remove(i : number) : void
@@ -53,13 +55,13 @@ abstract class List{
     abstract get(i : number) : void
 
     // set 
-    abstract set(i : number , v : any) : void
+    abstract set(i : number , v : T) : void
 
     // iterator
-    abstract forEach(handler : any) : void
+    abstract forEach(handler : Function) : void
 
     // find
-    abstract find(v : any) : number;
+    abstract find(v : T) : number;
 
     // status
     isEmpty() : boolean {
@@ -71,7 +73,7 @@ abstract class List{
 
 }
 
-class LinkedList extends List{
+class LinkedList<T> extends List<T>{
 
     private root : any;
     private rear : any;
@@ -83,21 +85,21 @@ class LinkedList extends List{
     }
     
     // implement List.add
-    add(v : any) : void {
-        v = new Node(v);
+    add(v : T) : void {
+        let newNode = new Node<T>(v);
         if(this.root == null){
-            this.root = this.rear = v;
+            this.root = this.rear = newNode;
         }else{
-            v.prev = this.rear;
-            this.rear.next = v;
-            this.rear = v;
+            newNode.prev = this.rear;
+            this.rear.next = newNode;
+            this.rear = newNode;
         }
         this._length += 1;
     }
 
     // implement List::insert
     // TODO : need to be tested
-    insert( i : number , v : any ) : void {
+    insert( i : number , v : T ) : void {
         let node = this.get( i );
         if( node == null ){
             // can't find the value given i
@@ -105,7 +107,7 @@ class LinkedList extends List{
             this.add( v );
         }else{
             // link the prev and next 
-            let newNode = new Node(v);
+            let newNode = new Node<T>(v);
             newNode.prev = node;
             newNode.next = node.next;
             node.next.prev = newNode;
@@ -114,7 +116,7 @@ class LinkedList extends List{
     }
 
     // implement List::delete
-    remove(i : number) : any {
+    remove(i : number) : Node<T> | null {
 
         if(i >= this._length)
             return null;
@@ -189,7 +191,7 @@ class LinkedList extends List{
     }
 }
 
-class ArrayList extends List{
+class ArrayList<T> extends List<T>{
 
     private data : Array<any>;
 
@@ -243,7 +245,7 @@ class ArrayList extends List{
     }
 }
 
-class Stack {
+class Stack<T> {
     public data : Array<any>;
     private _length : number = 0;
 
@@ -291,5 +293,102 @@ class Stack {
     }
 }
 
+type _Comp<T> = ( a : T , b : T ) => number ;
 
-export {LinkedList , ArrayList , Stack  }
+const defaultComparer : _Comp<any> = ( a : any , b : any ) => {
+    if( a - b > 0 ) return 1 ;
+    else if( a == b ) return 0 ;
+    return -1;
+}
+
+// TODO
+class PriorityQueue<T> {
+    
+    private data : Array< T > ;
+    private _length : number ;
+    private comparer : _Comp<T>
+
+    public get length() {
+        return this._length;
+    }
+
+    constructor( comparer : _Comp<T> = defaultComparer ){
+        this._length = 0;
+        this.data = new Array<T>;
+        this.comparer = comparer;
+    }
+
+    public push( v : T ) : void {
+
+        this.data.push( v );
+        this._length += 1;
+        this.shiftUp( this._length - 1 );
+
+    }
+
+    public top( ) : T {
+        if( this._length <= 0 ) return null;
+        return this.data.at( 0 );
+    }
+
+    public pop( ) : Boolean {
+        
+        if( this._length <= 0 ){
+            return false;
+        }
+        this.swap( 0 , this._length - 1 );
+        this.data.pop();
+        this._length -= 1;
+        this.shiftDown( 0 );
+        return true;
+
+    }
+
+    public isEmpty() : Boolean {
+        return this._length == 0;
+    }
+
+    public clear() : void {
+        this._length = 0;
+        this.data = new Array<T>();
+    }
+
+    private shiftUp( index : number ) : void {
+        if( index > 0 ){
+            let p : number = Math.floor( ( index - 1 ) / 2 ) ;
+            if( this.comparer( this.data.at( p ) , this.data.at( index ) ) >= 0 ){
+                this.swap( p , index );
+                this.shiftUp( p );
+            }
+        }
+    }
+
+    public shiftDown( index : number ) : void {
+        
+        let c : number = index * 2 + 1;
+        if( c < this._length ){
+            
+            if( c + 1 < this._length && this.comparer( this.data.at( c ) , this.data.at( c + 1 ) ) >= 0 ){
+                c += 1;
+            }
+
+            if( this.comparer( this.data.at( index ) , this.data.at( c ) ) >= 0 ){
+                    
+                this.swap( c , index );
+                this.shiftDown( c );
+            
+            }
+        }
+    }
+
+    private swap( aIndex : number , bIndex : number ) : void {
+        let a = this.data.at( aIndex );
+        let b = this.data.at( bIndex );
+        this.data[aIndex] = b;
+        this.data[bIndex] = a;
+    }
+
+}
+
+
+export {LinkedList , ArrayList , Stack , PriorityQueue }

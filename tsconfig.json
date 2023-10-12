@@ -21,6 +21,9 @@
         "ts/vector.ts",
         "ts/helper.ts",
         "ts/pdf.ts",
-        "ts/jpeg.ts"
+        "ts/jpeg.ts",
+        "ts/application.ts",
+        "ts/timer.ts",
+        "ts/animate.ts"
     ]
   }

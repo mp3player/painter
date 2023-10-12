@@ -22,7 +22,7 @@ class Shape extends EventListener {
     public transformShapeWorld : Matrix;
     public inverseTransformShapeWorld : Matrix;
     public box : Box;
-    public children : ArrayList;
+    public children : ArrayList<Shape>;
     
     public name : string;
     public visible : boolean;
@@ -433,7 +433,7 @@ class Text extends Shape {
 
 
     
-    constructor( text : string , x : number , y : number ){
+    constructor( text : string , x : number = 0 , y : number = 0 ){
         super( x , y );
         this.text = text;
         this.fontSize = 10;

@@ -50,6 +50,10 @@ class Color{
         return `rgb(${this.r},${this.g},${this.b})`;
     }
 
+    parse( color : string ) : Color {
+        return new Color();
+    }; 
+
 }
 
 class Font {

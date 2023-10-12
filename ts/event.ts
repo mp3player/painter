@@ -28,6 +28,7 @@ abstract class ActiveEvent {
 }
 
 
+
 // read-only properties
 class MouseActiveEvent extends ActiveEvent{
 
@@ -70,6 +71,8 @@ class KeyActiveEvent extends ActiveEvent {
     
 };
 
+type CallBack = ( event : ActiveEvent ) => void;
+
 class EventListener{
 
     public registedEvent : Map<string ,any>;
@@ -82,7 +85,7 @@ class EventListener{
         this.dragable = false;
     }
     
-    on( eventName : string , callback : any ) : void {
+    on( eventName : string , callback : CallBack ) : void {
         this.registedEvent.set( eventName , callback.bind( this ) );
     }
 
@@ -101,6 +104,7 @@ class EventListener{
     hasEvent( eventName : string ){
         return this.registedEvent.has( eventName );
     }
+    
 }
 
 

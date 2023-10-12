@@ -59,10 +59,6 @@ const BackBuffer : Map< String , ShapeCache > = new Map< string , ShapeCache >()
 // the OrderedBuffer should be a binary tree
 const OrderedBuffer : Array< ShapeCache > = new Array< ShapeCache > ();
 
-const HelperBuffer : Array< HelperCache > = new Array< HelperCache > ();
-
-
-
 class Painter extends Shape{
 
     public canvas : HTMLCanvasElement | null | undefined ;
@@ -85,12 +81,12 @@ class Painter extends Shape{
 
     constructor(
         canvas : HTMLCanvasElement | null | undefined,
-        width : number = innerWidth, 
-        height : number = innerHeight
+        width : number = innerWidth  , 
+        height : number = innerHeight 
     ){
         super(0,0);
 
-        this.canvas = canvas;
+        this.canvas = canvas ? canvas : null;
         this.width = width;
         this.height = height;
         this.background = Color.White;
@@ -101,6 +97,24 @@ class Painter extends Shape{
         this._inverseTransformScreen = new Matrix();
         this.init();
         this.updateTransformPainter();
+    }
+
+    appendTo( id : string | HTMLElement ) : void {
+        
+        let element : any;
+
+        console.log( id instanceof String )
+        
+        if( id instanceof String ){
+            element = document.querySelector( '#' + id );
+        }else{
+            element = id;
+        }
+
+        if( element ){
+            element.appendChild( this.canvas );
+        }
+
     }
 
     init(){
@@ -825,4 +839,4 @@ invokeEvent = function( painter : Painter ) : void {
 
 }
 
-export {Painter}
+export { Painter }
