@@ -85,6 +85,8 @@ class EventListener{
         this.dragable = false;
     }
     
+    // TODO : the name will be override
+    // the two EventListeners with two same name will not be retained at the same time
     on( eventName : string , callback : CallBack ) : void {
         this.registedEvent.set( eventName , callback.bind( this ) );
     }

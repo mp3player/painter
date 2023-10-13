@@ -19,11 +19,12 @@
         "ts/style.ts",
         "ts/util.ts",
         "ts/vector.ts",
-        "ts/helper.ts",
         "ts/pdf.ts",
         "ts/jpeg.ts",
         "ts/application.ts",
         "ts/timer.ts",
-        "ts/animate.ts"
+        "ts/animate.ts",
+        "ts/renderer.ts",
+        "ts/component.ts"
     ]
   }

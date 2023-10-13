@@ -3,11 +3,9 @@ import { Box, Tool } from "./util.js";
 import { Matrix, Vector } from "./vector.js";
 import { Style } from './style.js'
 import { EventListener } from "./event.js";
-
+import { Component, TransformComponent } from './component.js'
 
 enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT};
-
-
 
 class Shape extends EventListener {
     
@@ -23,6 +21,8 @@ class Shape extends EventListener {
     public inverseTransformShapeWorld : Matrix;
     public box : Box;
     public children : ArrayList<Shape>;
+    public components : Map< string ,Component > = new Map< string , Component >();
+    public transformComponent : TransformComponent = new TransformComponent;
     
     public name : string;
     public visible : boolean;
@@ -50,7 +50,6 @@ class Shape extends EventListener {
     public get needUpdate() { return this._shapeNeedUpdate || this._transformNeedUpdate ; }
 
     public get shapeType() { return ShapeType.SHAPE; }
-
 
     constructor( x = 0 , y = 0 ){
         super();
@@ -144,7 +143,37 @@ class Shape extends EventListener {
         return null;
     }
 
+    // component related
+    addComponent( component : Component ) : void {
 
+        this.components.set( component.name , component );
+        component.setShape( this );
+        
+    }
+
+    hasComponent( name : string ) : boolean {
+
+        return this.components.has( name );
+
+    }
+
+    findComponent( name : string ) : Component {
+        
+        if( this.hasComponent( name ) ){
+            return this.components.get( name );
+        }
+        return null;
+
+    }
+
+    removeComponent( name : string ) : boolean {
+
+        if( this.hasComponent( name ) ) {
+            return this.components.delete( name );
+        }
+        return false;
+
+    }
 
     // TODO : which is need to be overrieded according to the shape data  
     updateBox() : void {}
@@ -195,29 +224,35 @@ class Shape extends EventListener {
     }
 
     // this method will be called automatically when the status of the shape changed 
-    update() : void {
+    update( deltaTime : number ) : void {
         
         // TODO : update transform ;
+        // this section should place at TransformComponent
         this.updateTransformShape();
         this.updateTransformShapeWorld();
         this._transformNeedUpdate = false;
 
         // TODO : update shape status 
         this._shapeNeedUpdate = false;
+
+        let iter = this.components.forEach( ( component : Component , name : String ) => {
+            component.update( deltaTime );
+        } )
         
     }
 
     // depth first traverse
-    traverse( cb = ( d : Shape ) => {} ) : void {
+    traverse( callback = ( d : Shape ) => {} ) : void {
         
-        this.children.forEach((d : Shape) => {
-            cb(d);
-            d.traverse(cb);
+        this.children.forEach( (d : Shape) => {
+            callback( d );
+            d.traverse( callback );
         })
     }
 
     // this should be overrided according the shape 
     clone() : Shape {
+        
         let shape = new Shape();
         // TODO : clone the properties of the shape
         
@@ -226,6 +261,7 @@ class Shape extends EventListener {
             shape.add( this.children.get(i).clone() );
         }
         return shape;
+
     }
 
 }

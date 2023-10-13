@@ -111,31 +111,7 @@ class Style{
         this.closePath    = config.closePath;
     }
 
-    // TODO : finish the correction
-    static setStyle( pen : CanvasRenderingContext2D  , style : Style ) : void {
-        if( style.background ) pen.fillStyle = style.background.toString();
-        if( style.color ) pen.strokeStyle = style.color.toString();
-        pen.lineWidth = style.lineWidth;
-        pen.lineJoin = 'round';
-        pen.lineCap = 'round';
-        pen.globalAlpha = style.opacity;
-    }
-
-    static setStroke( pen : CanvasRenderingContext2D , style : Style ) : void {
-        pen.stroke();
-    }
-
-    static setFill( pen : CanvasRenderingContext2D , style : Style ) : void {
-        pen.fill();
-    }
-
-    static setRender( pen : CanvasRenderingContext2D  , style : Style ) : void {
-        if(style.background != null)
-            Style.setFill(pen , style);
-        
-        if(style.lineWidth > 0)
-            Style.setStroke(pen, style);
-    }
+    
 }
 
 

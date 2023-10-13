@@ -17,7 +17,7 @@ class Application {
         this.init();
     }
 
-    static getInstance( element : string | HTMLElement ) : Application {
+    static createInstance( element : string | HTMLElement ) : Application {
         if( !Application.app ){
             Application.app = new Application( element );
         }
@@ -26,13 +26,17 @@ class Application {
 
     init() : void {
 
+
+
         this.painter.background = new Color( 100 , 100 , 100 );
         this.painter.updateTransformShape();
 
         let center = new Circle(100,0,0);
         center.style.background = Color.Red;
-        center.setScale( 1 , .5 );
         this.painter.add( center );
+
+        // let border = new BorderBoxComponent();
+        // center.addComponent( border );
 
         let rect : Rectangle = new Rectangle(20,20,200,300);
         rect.style.background = Color.Black;
@@ -90,7 +94,6 @@ class Application {
 
         this.painter.flush();
         this.painter.render();
-        this.painter.pen.save();
 
     }
 

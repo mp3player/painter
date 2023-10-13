@@ -1,6 +1,6 @@
 import { Application } from './dist/application.js'
 
-let app = Application.getInstance( document.body );
+let app = Application.createInstance( document.body );
 
 app.run()
 
