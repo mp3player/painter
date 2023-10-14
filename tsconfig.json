@@ -24,7 +24,7 @@
         "ts/application.ts",
         "ts/timer.ts",
         "ts/animate.ts",
-        "ts/renderer.ts",
-        "ts/component.ts"
+        "ts/component.ts",
+        "ts/system.ts"
     ]
   }

@@ -4,32 +4,38 @@ import { Circle , Rectangle , Polygon , Ellipse , Path , Text } from './shape.js
 import { Color } from './style.js';
 import { Vector } from './vector.js';
 import { ActiveEvent , MouseActiveEvent } from './event.js';
+import { CanvasRenderSystem, TransformSystem } from './system.js';
+
+let rect : Rectangle = new Rectangle(20,20,200,300);
+rect.style.background = Color.Black;
 
 
 class Application {
     
     public static app : Application = null;
-    private painter : Painter
+    private painter : Painter ;
+    private renderSystem : CanvasRenderSystem ;
+    private transformSystem : TransformSystem ;
 
-    private constructor( element : string | HTMLElement  ){
+    private constructor( ){
         this.painter = new Painter();
-        this.painter.appendTo( element );
+        this.renderSystem = new CanvasRenderSystem( this.painter , 'render' );
+        this.transformSystem = new TransformSystem( this.painter , 'transform' );
         this.init();
     }
 
     static createInstance( element : string | HTMLElement ) : Application {
         if( !Application.app ){
-            Application.app = new Application( element );
+            Application.app = new Application();
         }
+        console.log( Application.app )
+        Application.app.appendTo( element );
         return Application.app;
     }
 
     init() : void {
 
-
-
         this.painter.background = new Color( 100 , 100 , 100 );
-        this.painter.updateTransformShape();
 
         let center = new Circle(100,0,0);
         center.style.background = Color.Red;
@@ -38,8 +44,6 @@ class Application {
         // let border = new BorderBoxComponent();
         // center.addComponent( border );
 
-        let rect : Rectangle = new Rectangle(20,20,200,300);
-        rect.style.background = Color.Black;
         this.painter.add( rect );
 
         center.index = 10;
@@ -90,19 +94,38 @@ class Application {
         // this.painter.add( ellipse );
     }
 
+    appendTo( id : string | HTMLElement ) : void {
+        
+        let element : any;
+        
+        if( id instanceof String ){
+            element = document.querySelector( '#' + id );
+        }else{
+            element = id;
+        }
+
+        if( element ){
+            element.appendChild( this.renderSystem.getCanvas() );
+        }
+
+    }
+
     update( deltaTime : number ) : void {
 
-        this.painter.flush();
-        this.painter.render();
+        // this.painter.flush();
+        this.transformSystem.update( deltaTime );
+        this.renderSystem.update( deltaTime );
 
     }
 
     run() : void {
 
         let _update = () => {
-            let deltaTime = Timer.getDelteTime();
             requestAnimationFrame( _update );
+            let deltaTime = Timer.getDelteTime();
             this.update( deltaTime );
+
+            rect.transform.rotate( .02) ;
         }
         _update();
 

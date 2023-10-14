@@ -86,12 +86,13 @@ class Vector{
     sub( v : Vector ) : Vector {
         return new Vector( this.x - v.x , this.y - v.y );
     }
+
     /**
      * 0 , 3 , 6
      * 1 , 4 , 7
      * 2 , 5 , 8
      */
-    multiply( mat : Matrix  ) : Vector {
+    applyTransform( mat : Matrix  ) : Vector {
         let v0 = mat.data[0] * this.x + mat.data[3] * this.y + mat.data[6] * 1;
         let v1 = mat.data[1] * this.x + mat.data[4] * this.y + mat.data[7] * 1;
         let v3 = mat.data[2] * this.x + mat.data[5] * this.y + mat.data[8] * 1;
@@ -122,21 +123,19 @@ class Vector{
         return `{ x: ${ this.x } , y: ${ this.y } }`
     }
 
-    static addition( v0 : Vector , v1 :Vector) : Vector { 
+    static Addition( v0 : Vector , v1 :Vector) : Vector { 
         return v0.add(v1);
     }
 
-    static substraction( v0 : Vector , v1 : Vector ) : Vector {
+    static Substraction( v0 : Vector , v1 : Vector ) : Vector {
         return v0.sub( v1 );
     }
-
-    
 
     static SquaDist(v0 : Vector , v1 : Vector ) : number {
         return v1.sub(v0).squareLength();
     }
 
-    static dist(v0 : Vector , v1 : Vector ) : number {
+    static Dist(v0 : Vector , v1 : Vector ) : number {
         return v1.sub(v0).length();
     }
 
@@ -145,14 +144,18 @@ class Vector{
      * v0 : x , y , 1
      * v1 : x , y , 1
      */
-    static direction(v0 : Vector , v1 : Vector ) : number {
+    static Direction(v0 : Vector , v1 : Vector ) : number {
         // let x = v0.y - v1.y;
         // let y = v1.x - v0.x;
         let w = v0.x * v1.y - v0.y * v1.x;
         return w;
     }
 
-    static X : Vector = new Vector(1);
+    static Equal( v0 : Vector , v1 : Vector ) : boolean {
+        return ( v0.x == v1.x && v0.y == v1.y ) ;
+    }
+
+    static X : Vector = new Vector(1,0);
     static Y : Vector = new Vector(0,1);
 
 }
@@ -290,7 +293,7 @@ class Matrix{
      * 1 , 4 , 7
      * 2 , 5 , 8
      */
-    static multiply( mat1 : Matrix , mat2 : Matrix ) : Matrix {
+    static Multiply( mat1 : Matrix , mat2 : Matrix ) : Matrix {
         let data : Array<number> = []
         // plain matrix multiplication 
         for(let i = 0 ; i < 3 ; ++ i){ // row
@@ -305,12 +308,13 @@ class Matrix{
         
         return new Matrix(...data);
     }
+
     /**
      * 0 , 3 , 6(x)
      * 1 , 4 , 7(y)
      * 2 , 5 , 8
      */
-    static translate( mat : Matrix , t : Vector ) : Matrix {
+    static Translate( mat : Matrix , t : Vector ) : Matrix {
         let res = mat.clone()
         let data = res.data;
 
@@ -325,10 +329,10 @@ class Matrix{
      * 1(s)  , 4(c)  , 7
      * 2     , 5     , 8
      */
-    static rotate( mat : Matrix , a : number ) : Matrix {
+    static Rotate( mat : Matrix , a : number ) : Matrix {
         let res = mat.clone();
         let rotationMatrix = new Matrix( cos(a) , sin(a) , 0 , -sin(a) , cos(a) , 0 );
-        res = Matrix.multiply(rotationMatrix , res);
+        res = Matrix.Multiply(rotationMatrix , res);
 
         return res;
     }
@@ -338,7 +342,7 @@ class Matrix{
      * 1 , 4(y) , 7
      * 2 , 5 , 8
      */
-    static scale( mat : Matrix , s : Vector) : Matrix {
+    static Scale( mat : Matrix , s : Vector) : Matrix {
         let res = mat.clone();
 
         res.data[0] *= s.x;
@@ -352,9 +356,24 @@ class Matrix{
         return res;
     }
 
-    static linearTransform( mat : Matrix ) : Matrix {
+    static LinearTransform( mat : Matrix ) : Matrix {
         let d0 = mat.data[0] , d1 = mat.data[1] , d3 = mat.data[3] , d4 = mat.data[4];3
         return new Matrix( d0 , d1 , 0 , d3 , d4 , 0 , 0 , 0 , 1 );
+    }
+
+    static Equal( mat0 : Matrix , mat1 : Matrix ) : boolean {
+        for( let i = 0 ; i < 9 ; ++ i ){
+            if( mat0.data[i] != mat1.data[i] ) return false;
+        }
+        return true;
+    }
+
+    static TransformSequence( mat : Matrix , seq : Array< Vector > ) : Array< Vector > {
+        let result : Array<Vector> = new Array<Vector>;
+        for( let i = 0 ; i < seq.length ; ++ i ){
+            result.push( seq.at( i ).applyTransform( mat ) );
+        }
+        return result;
     }
 
 }

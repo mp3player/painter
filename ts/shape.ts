@@ -4,25 +4,18 @@ import { Matrix, Vector } from "./vector.js";
 import { Style } from './style.js'
 import { EventListener } from "./event.js";
 import { Component, TransformComponent } from './component.js'
+import { ShapeRendererComponent } from "./component.js";
 
-enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT};
+enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT };
 
 class Shape extends EventListener {
-    
+
     public style : Style;
-    public rotation : number;
-    public scale : Vector;
-    public center : Vector;
-    public transformShape : Matrix;
-    public inverseTransformShape : Matrix;
-    public transformWorld : Matrix;
-    public inverseTransformWorld : Matrix;
-    public transformShapeWorld : Matrix;
-    public inverseTransformShapeWorld : Matrix;
+
     public box : Box;
     public children : ArrayList<Shape>;
     public components : Map< string ,Component > = new Map< string , Component >();
-    public transformComponent : TransformComponent = new TransformComponent;
+    public transform : TransformComponent = new TransformComponent( 'transform' );
     
     public name : string;
     public visible : boolean;
@@ -31,7 +24,6 @@ class Shape extends EventListener {
 
     protected _index : number;
     protected _shapeNeedUpdate : boolean;
-    protected _transformNeedUpdate : boolean;
     protected _uuid : string;
 
     public set index( _index : number ) {
@@ -43,11 +35,7 @@ class Shape extends EventListener {
 
     public get shapeNeedUpdate(){ return this._shapeNeedUpdate ; }
 
-    public get transformNeedUpdate(){ return this._transformNeedUpdate ; }
-
     public get uuid() { return this._uuid ; };
-
-    public get needUpdate() { return this._shapeNeedUpdate || this._transformNeedUpdate ; }
 
     public get shapeType() { return ShapeType.SHAPE; }
 
@@ -55,25 +43,9 @@ class Shape extends EventListener {
         super();
         this.style = new Style();
 
-        // position properties
-        this.rotation = 0;
-        this.scale = new Vector(1,1);
-
-        this.center = new Vector(x,y);
-        
         // whether the shape need to be updated , including : shape data
         this._shapeNeedUpdate = false;
         // whether the shape need to be updated , including : transform matirx
-        this._transformNeedUpdate = true;
-
-        this.transformShape = new Matrix();
-        this.inverseTransformShape = new Matrix();
-
-        this.transformWorld = new Matrix();
-        this.inverseTransformWorld = new Matrix();
-
-        this.transformShapeWorld = new Matrix();
-        this.inverseTransformShapeWorld = new Matrix();
 
         this.box = new Box();
 
@@ -88,41 +60,20 @@ class Shape extends EventListener {
         this.visible = true;
         this.dragable = true;
 
+        this.addComponent( this.transform );
+        this.addComponent( new ShapeRendererComponent( 'renderer' ) );
+
     }
 
     setStyle( style : Style ) : void {
         this.style = style;
     }
 
-    setRotation( rotation : number ) : void {
-        this.rotation = rotation;
-        this._transformNeedUpdate = true;
-    }
-
-    setTranslation( x : number , y : number ) : void {
-        this.center = new Vector( x , y );
-        this._transformNeedUpdate = true;
-    }
-
-    setScale( x : number , y : number ) : void {
-        this.scale = new Vector( x , y );
-        this._transformNeedUpdate = true;
-    }
-
-    rotate( r : number ) : void {
-        this.rotation += r;
-        this._transformNeedUpdate = true;
-    }
-
-    translate( translation : Vector ) : void {
-        this.center = Vector.addition( this.center , translation );
-        this._transformNeedUpdate = true;
-    }
-
     add(shape : Shape) : void { 
+
         this.children.add(shape);
         shape.parent = this;
-        shape.updateTransformWorld( this.transformShapeWorld , this.inverseTransformShapeWorld );
+
     }
 
     remove( uuid : string ) : Shape | null {
@@ -147,7 +98,7 @@ class Shape extends EventListener {
     addComponent( component : Component ) : void {
 
         this.components.set( component.name , component );
-        component.setShape( this );
+        component.shape = this;
         
     }
 
@@ -157,7 +108,7 @@ class Shape extends EventListener {
 
     }
 
-    findComponent( name : string ) : Component {
+    findComponent( name : string ) : Component | any {
         
         if( this.hasComponent( name ) ){
             return this.components.get( name );
@@ -173,72 +124,6 @@ class Shape extends EventListener {
         }
         return false;
 
-    }
-
-    // TODO : which is need to be overrieded according to the shape data  
-    updateBox() : void {}
-
-    // modelMatrix & inverse( modelMatrix )
-    // update modelMatrix => update shapwWorldMatrix => update transform of children;
-    updateTransformShape( ) : void {
-
-        this.transformShape = new Matrix();
-
-        this.transformShape = Matrix.rotate(this.transformShape , this.rotation);
-
-        this.transformShape = Matrix.scale(this.transformShape , this.scale);
-
-        this.transformShape = Matrix.translate( this.transformShape , this.center );
-
-
-        this.inverseTransformShape = this.transformShape.inverse();
-
-        this._transformNeedUpdate = false;
-
-    }
-
-    // TODO : thie method should be called by it's parent
-    // worldMatrix & inverse( worldMatrix )
-    // update worldMatrix => update shapwWorldMatrix => update transform of children;
-    updateTransformWorld( transformWorld : Matrix , inverseTransformWorld : Matrix ) : void {
-
-        this.transformWorld = transformWorld;
-        this.inverseTransformWorld = inverseTransformWorld;
-
-        this._transformNeedUpdate = true;
-
-    }
-
-    // TODO : this method should be called by it's parent
-    // worldMatrix * modelMatirx & inverse( worldMatrix * modelMatrix )
-    // compute shapeWorldMatrix => update transform of children
-    updateTransformShapeWorld() : void {
-
-        this.transformShapeWorld = Matrix.multiply( this.transformWorld , this.transformShape );
-        this.inverseTransformShapeWorld = this.transformShapeWorld.inverse();
-
-        for( let i = 0 ; i < this.children.length ; ++ i ){
-            this.children.get( i ).updateTransformWorld( this.transformShapeWorld , this.inverseTransformShapeWorld );
-        }
-        
-    }
-
-    // this method will be called automatically when the status of the shape changed 
-    update( deltaTime : number ) : void {
-        
-        // TODO : update transform ;
-        // this section should place at TransformComponent
-        this.updateTransformShape();
-        this.updateTransformShapeWorld();
-        this._transformNeedUpdate = false;
-
-        // TODO : update shape status 
-        this._shapeNeedUpdate = false;
-
-        let iter = this.components.forEach( ( component : Component , name : String ) => {
-            component.update( deltaTime );
-        } )
-        
     }
 
     // depth first traverse
@@ -264,11 +149,13 @@ class Shape extends EventListener {
 
     }
 
+
+
 }
 
 class Path extends Shape {
 
-    protected points : Array<Vector>;
+    public points : Array<Vector>;
 
     public get shapeType() { return ShapeType.PATH; }
 
@@ -283,18 +170,15 @@ class Path extends Shape {
         this._shapeNeedUpdate = true;
     }
 
-    // override
-    updateBox() : void { }
-
 }
 
 class Arc extends Shape {
     
-    private from : number;
-    private to : number; 
-    private radius : number; 
-    private startAngle : number ;
-    private endAngle : number;
+    public from : number;
+    public to : number; 
+    public radius : number; 
+    public startAngle : number ;
+    public endAngle : number;
 
     public get shapeType() { return ShapeType.ARC; }
 
@@ -304,20 +188,7 @@ class Arc extends Shape {
         this.startAngle = startAngle;
         this.endAngle = endAngle;
         this.radius = radius;
-
-        this.updateBox();
         
-    }
-
-    // override
-    updateBox(): void {
-        
-        let x = this.center.x ; 
-        let y = this.center.y ; 
-        let r = this.radius;
-
-        this.box = new Box( y + r , x + r , y - r , x - r );
-
     }
 
 }
@@ -346,9 +217,6 @@ class Ellipse extends Shape {
         this.b = b;
     }
 
-    updateBox() : void {
-        super.updateBox();
-    }
 
 };
 
@@ -366,18 +234,11 @@ class Rectangle extends Shape{
     }
 
 
-    updateBox(): void {
-        this.box.left = -this.width / 2;
-        this.box.right = this.width / 2;
-        this.box.top = this.height / 2;
-        this.box.bottom = this.height / 2;
-    }
-
 }
 
 class Polygon extends Shape{
     
-    protected vertexes : Array<Vector>;
+    public vertexes : Array<Vector>;
 
     public get shapeType() { return ShapeType.POLYGON; }
 
@@ -393,32 +254,24 @@ class Polygon extends Shape{
 
     }
 
-    updateBox(): void {
-        this.box.reset();
-        for( let i = 0 ; i < this.vertexes.length ; ++ i ){
-            this.box.append( this.vertexes[i] );
-        }
-    }
 
 }
 
 class Convex extends Polygon{
+
     constructor(vertexes : Array<Vector> , x : number , y : number ){
         vertexes = Tool.GetConvex(vertexes);
         super(vertexes , x,y);
     }
-    updateBox(): void {
-        this.box.reset();
-        for( let i = 0 ; i < this.vertexes.length ; ++ i ){
-            this.box.append( this.vertexes[i] );
-        }
-    }
+
 }
 
 class QuadraticBezierCurve extends Path{
+
     public p0 : Vector;
     public p1 : Vector;
     public p2 : Vector;
+
     constructor( p0 : Vector , p1 : Vector , p2 : Vector , x = 0 , y = 0 ){
         super(x , y);
         this.p0 = p0 ;
@@ -426,9 +279,6 @@ class QuadraticBezierCurve extends Path{
         this.p2 = p2 ;
     }
 
-    updateBox(): void {
-        
-    }
 
 }
 
@@ -445,7 +295,7 @@ class Text extends Shape {
 
     public get size(){ return this._size ;}
 
-    public get fontFamily(){ return this._family; }
+    public get family(){ return this._family; }
 
     public get baseline(){
         return this._baseline;
@@ -460,7 +310,7 @@ class Text extends Shape {
         this._baseline = _baseline ;
     }
 
-    public set fontFamily( family : string ) { 
+    public set family( family : string ) { 
         this._family = family;
         this._shapeNeedUpdate = true;
     }

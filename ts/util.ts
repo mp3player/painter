@@ -36,10 +36,10 @@ class Tool{
         let v2 = p3.sub(p0)//( l1->lower - l0->upper , 1.0f );
         let v3 = p1.sub(p3)//( l0->lower - l1->lower , 1.0f );
     
-        let c0z : number = Vector.direction(v0,v1);
-        let c1z : number = Vector.direction(v1,v2);
-        let c2z : number = Vector.direction(v2,v3);
-        let c3z : number = Vector.direction(v3,v0);
+        let c0z : number = Vector.Direction(v0,v1);
+        let c1z : number = Vector.Direction(v1,v2);
+        let c2z : number = Vector.Direction(v2,v3);
+        let c3z : number = Vector.Direction(v3,v0);
     
         if( c0z > 0 && c1z > 0 && c2z > 0 && c3z > 0 || c0z < 0 && c1z < 0 && c2z < 0 && c3z < 0 ){
             return true;
@@ -203,7 +203,7 @@ class Tool{
             stack.pop();
             let v = p0.sub(p1);
             let v1 = vec.sub(p0)
-            let z = Vector.direction(v,v1);
+            let z = Vector.Direction(v,v1);
             if(z > 0){
                 stack.push(p1)
                 stack.push(p0)
