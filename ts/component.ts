@@ -52,7 +52,7 @@ class TransformComponent extends Component {
     public update( deltaTime: number ): void {
 
         if( this.transformShapeNeedUpdate == true ){
-            
+            // debugger
             // update Local Transform
             this.updateTransformShape();
             this.transformShapeNeedUpdate = false;
@@ -65,6 +65,7 @@ class TransformComponent extends Component {
         }
 
         if( this.transformWorldNeedUpdate == true ){
+
             // update World Transform
             this.updateTransformShapeWorld();
             this.transformWorldNeedUpdate = false;
@@ -91,11 +92,11 @@ class TransformComponent extends Component {
     // Parent Transform
     public updateTransformWorld( worldTransform : TransformComponent ) : void {
 
-        this.transformWorld = worldTransform.transformWorld.clone();
-        this.inverseTransformWorld = worldTransform.inverseTransformWorld.clone();
+        this.transformWorld = worldTransform.transformShapeWorld.clone();
+        this.inverseTransformWorld = worldTransform.inverseTransformShapeWorld.clone();
 
         // TODO : check wheter the updated value are same as the original to decrease compucation cost
-
+        
         this.transformWorldNeedUpdate = true;
 
     }

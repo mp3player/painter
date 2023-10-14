@@ -3,34 +3,37 @@ import { Painter } from './painter.js'
 import { Circle , Rectangle , Polygon , Ellipse , Path , Text } from './shape.js';
 import { Color } from './style.js';
 import { Vector } from './vector.js';
-import { ActiveEvent , MouseActiveEvent } from './event.js';
+import { ActiveEvent , EventSystem, MouseActiveEvent } from './event.js';
 import { CanvasRenderSystem, TransformSystem } from './system.js';
 
-let rect : Rectangle = new Rectangle(20,20,200,300);
-rect.style.background = Color.Black;
 
 
 class Application {
     
     public static app : Application = null;
     private painter : Painter ;
+    private context : HTMLCanvasElement;
+    private width : number;
+    private height : number;
+
     private renderSystem : CanvasRenderSystem ;
     private transformSystem : TransformSystem ;
+    private eventSystem : EventSystem;
 
     private constructor( ){
         this.painter = new Painter();
-        this.renderSystem = new CanvasRenderSystem( this.painter , 'render' );
-        this.transformSystem = new TransformSystem( this.painter , 'transform' );
-        this.init();
-    }
 
-    static createInstance( element : string | HTMLElement ) : Application {
-        if( !Application.app ){
-            Application.app = new Application();
-        }
-        console.log( Application.app )
-        Application.app.appendTo( element );
-        return Application.app;
+        this.context = document.createElement('canvas');
+        this.renderSystem = new CanvasRenderSystem( this.painter , 'render' , this.context );
+        this.transformSystem = new TransformSystem( this.painter , 'transform' );
+
+        this.width = innerWidth;
+        this.height = innerHeight;
+
+        this.renderSystem.resize( this.width , this.height );
+
+        this.init();
+
     }
 
     init() : void {
@@ -43,7 +46,9 @@ class Application {
 
         // let border = new BorderBoxComponent();
         // center.addComponent( border );
-
+        let rect : Rectangle = new Rectangle(20,20,200,300);
+        rect.style.background = Color.Black;
+        
         this.painter.add( rect );
 
         center.index = 10;
@@ -68,16 +73,6 @@ class Application {
 
         rect.add( polygon )
 
-        let path = new Path();
-
-        for( let i = 0 ; i < 8 * Math.PI / 18.0  ; i += .001 ){
-            path.append( new Vector( i * 10 , Math.log( Math.tan( i / 2 + Math.PI / 4 ) ) * 10 ) );
-        }
-
-        path.style.background = null;
-
-        this.painter.add( path );
-
 
         let str = `「如果尖銳的批評完全消失，溫和的批評將會變得刺耳。\n
         如果溫和的批評也不被允許，沈默將被認為居心叵測。\n
@@ -88,10 +83,10 @@ class Application {
         text.size = 20;
         // painter.add( text )
 
-        
+        rect.transform.setRotation( Math.PI / 4 ) ;
 
         let ellipse = new Ellipse( 50 ,100 , 100 , 100 );
-        // this.painter.add( ellipse );
+        this.painter.add( ellipse );
     }
 
     appendTo( id : string | HTMLElement ) : void {
@@ -112,7 +107,6 @@ class Application {
 
     update( deltaTime : number ) : void {
 
-        // this.painter.flush();
         this.transformSystem.update( deltaTime );
         this.renderSystem.update( deltaTime );
 
@@ -124,11 +118,21 @@ class Application {
             requestAnimationFrame( _update );
             let deltaTime = Timer.getDelteTime();
             this.update( deltaTime );
-
-            rect.transform.rotate( .02) ;
+            this.painter.transform.rotate( -.01 );
+            
         }
         _update();
 
+    }
+
+
+    static createInstance( element : string | HTMLElement ) : Application {
+        if( !Application.app ){
+            Application.app = new Application();
+        }
+        console.log( Application.app )
+        Application.app.appendTo( element );
+        return Application.app;
     }
 
 }

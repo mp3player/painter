@@ -14,12 +14,6 @@ interface ShapeCache {
 };
 
 let bufferShape : ( shape : Shape ) => ShapeCache | null ;
-let bufferChildren: ( transform : Matrix , shape : Shape , painter : Painter ) => void;
-let drawArc : ( renderer : CanvasRenderSystem , cache : ShapeCache , style : Style ) => void;
-let drawRectange : ( renderer : CanvasRenderSystem  , cache : ShapeCache , style : Style ) => void ;
-let drawPolygon : ( renderer : CanvasRenderSystem  , cache : ShapeCache, style : Style  ) => void;
-let drawPath : ( renderer : CanvasRenderSystem  , cache : ShapeCache , style : Style ) => void;
-let drawText : ( renderer : CanvasRenderSystem  , cache : ShapeCache , style : Style ) => void;
 
 abstract class SystemBase {
 
@@ -31,6 +25,8 @@ abstract class SystemBase {
         this.scene = scene;
         this.name = name;
     }
+
+    public init() : void {}
     
     public abstract update( deltaTime : number ) : void ;
 
@@ -47,24 +43,28 @@ class TransformSystem extends SystemBase {
     public update( deltaTime : number ) : void {
 
         let callback : Function = ( node : Shape ) => {
-            
+
             let worldTransform : TransformComponent = null;
             if( node.hasComponent('transform') ){
                 worldTransform = node.findComponent( 'transform' );
                 worldTransform.update( deltaTime );
+                
             }
-
+            
             let list : ArrayList< Shape > = node.children;
             for( let i = 0 ; i < list.length ; ++ i ){
-                let shape = list.get( i );
+                
+                let shape : Shape = list.get( i );
                 if( shape.hasComponent('transform') ){
                     let transform : TransformComponent = shape.findComponent( 'transform' );
+                    
                     if( worldTransform != null && worldTransform.hasUpdated ){
                         transform.updateTransformWorld( worldTransform );
-                        console.log( worldTransform )
                     }
-                    transform.update( deltaTime );
+
+                    callback( shape );
                 }
+                
             }
 
         }
@@ -118,9 +118,9 @@ class CanvasRenderSystem extends RenderSystem {
 
     private renderBuffer : Map< string , ShapeCache > = new Map< string , ShapeCache >;
 
-    public constructor( scene : Painter , name : string = 'render' ) {
+    public constructor( scene : Painter , name : string = 'render' , canvas : HTMLCanvasElement | null ) {
         super( scene , name );
-        this.canvas = document.createElement( 'canvas') ;
+        this.canvas = canvas;
         this.pen = this.canvas.getContext( '2d' );
         this.resize( innerWidth , innerHeight );
         this.init();
@@ -155,15 +155,24 @@ class CanvasRenderSystem extends RenderSystem {
         this.pen.setTransform( data[0] , data[1] , data[3] , data[4] , data[6] , data[7] );
     }
 
-    public flush( color : Color ) : void{
+    public flush( ) : void{
         if( !this.pen ) return ;
 
-        this.pen.save();
+        this.save();
 
-        this.pen.fillStyle = color.toString()
-        this.pen.fillRect( 0 , 0 , this.width , this.height );
-        this.pen.fill();
-        this.pen.restore();
+        this.beginFill( this.scene.background );
+
+        this.beginPath( Color.Black );
+        this.moveTo( new Vector( -this.width / 2 , this.height / 2) );
+
+        this.lineTo( new Vector( this.width / 2 , this.height / 2) )
+        this.lineTo( new Vector( this.width / 2 , -this.height / 2) )
+        this.lineTo( new Vector( -this.width / 2 , -this.height / 2) )
+
+        this.closePath();
+
+        this.endFill();
+        this.restore();
     }
 
     // TODO : finish the correction
@@ -260,6 +269,7 @@ class CanvasRenderSystem extends RenderSystem {
 
         // Build PriorityQueue to Render
         super.update( deltaTime );
+        this.flush();
 
         // render the queue in order
         while( !this.queue.isEmpty() ){
@@ -268,7 +278,7 @@ class CanvasRenderSystem extends RenderSystem {
             
             // draw shape
             let buffer : ShapeCache = null;
-            
+            // console.log( shape , shape.findComponent('transform').hasUpdated )
             if( this.renderBuffer.has( shape.uuid ) && !shape.findComponent('transform').hasUpdated ){
                 buffer = this.renderBuffer.get( shape.uuid );
             }else{
@@ -518,118 +528,6 @@ bufferShape = function( node : Shape | any  ) : ShapeCache | null {
     }
 
     return cache;
-
-}
-
-drawArc = function ( renderer : CanvasRenderSystem , cache : ShapeCache , style : Style ) : void {
-    
-    let pen = renderer.getPen();
-    let buffer = cache.buffer;
-    if( buffer.edge.length <= 0 ) return ;
-
-    pen.save();
-
-    renderer.setStyle( style );
-
-    pen.beginPath();
-
-    pen.moveTo( buffer.edge[0].x , buffer.edge[0].y );
-    for(let i = 0 ; i < buffer.edge.length ; ++ i){
-        pen.lineTo( buffer.edge[i].x , buffer.edge[i].y );
-    }
-
-    // pen.arc( buffer.center.x , buffer.center.y , buffer.radius , buffer.startAngle , buffer.endAngle );
-    
-    renderer.setRender( style );
-    pen.restore();
-
-}
-
-drawRectange = function( renderer : CanvasRenderSystem , cache : ShapeCache , style : Style ) : void {
-
-    let pen = renderer.getPen();
-    let buffer = cache.buffer;
-
-    pen.save();
-    
-    renderer.setStyle(style);
-    
-    pen.beginPath();
-    pen.moveTo( buffer.edge[0].x , buffer.edge[0].y );
-    for(let i = 0 ; i < buffer.edge.length ; ++ i){
-        pen.lineTo( buffer.edge[i].x , buffer.edge[i].y );
-    }
-    pen.closePath();
-
-    renderer.setRender( style );
-
-    pen.restore();
-
-}
-
-drawPolygon = function( renderer : CanvasRenderSystem , cache : ShapeCache, style : Style  ) : void {
-    let pen = renderer.getPen();
-
-    let buffer = cache.buffer;
-    if( buffer.edge.length <= 0 ) return ;
-
-    pen.save();
-    
-    renderer.setStyle( style );
-    
-    pen.beginPath();
-    let start = buffer.edge[0]
-    
-    pen.moveTo(start.x,start.y);
-    for(let i = 1 ; i < buffer.edge.length ; ++ i){
-        let edge = buffer.edge[i]
-        pen.lineTo( edge.x , edge.y );
-    }
-    pen.closePath();
-    
-    renderer.setRender( style);
-
-    pen.restore();
-
-}
-
-drawPath = function( renderer : CanvasRenderSystem , cache : ShapeCache , style : Style ) : void {
-
-    let pen = renderer.getPen();
-    let buffer = cache.buffer;
-    if( buffer.edge.length <= 0) return ;
-
-    pen.save();
-    renderer.setStyle( style );
-    pen.beginPath();
-    
-    
-    let start = buffer.edge[0]
-
-    pen.moveTo(start.x,start.y);
-    for(let i = 1 ; i < buffer.edge.length ; ++ i){
-        let edge = buffer.edge[i];
-        pen.lineTo(edge.x , edge.y);
-    }
-    renderer.setRender( style );
-    pen.restore();
-
-}
-
-drawText = function( renderer : CanvasRenderSystem  , cache : ShapeCache , style : Style ) : void {
-    let pen = renderer.getPen();
-    pen.save();
-    pen.beginPath();
-    let buffer = cache.buffer;
-    let position = buffer.position;
-    let font = cache.buffer.font;
-    // this.pen.font()
-    pen.font = font;
-    // this.pen.textBaseline = 
-    pen.fillText( buffer.text , position.x , position.y );
-    pen.fill();
-    pen.closePath();
-    pen.restore();
 
 }
 

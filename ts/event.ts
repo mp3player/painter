@@ -1,3 +1,5 @@
+import { Painter } from "./painter.js";
+import { SystemBase } from "./system.js";
 import { Vector } from "./vector.js";
 
 class EventType { 
@@ -109,5 +111,28 @@ class EventListener{
     
 }
 
+class EventSystem extends SystemBase {
 
-export { ActiveEvent ,  MouseActiveEvent , EventListener  , EventType }
+    private target : HTMLElement | null ;
+
+    public constructor( env : Painter , name : string = "evnet" , target : HTMLElement | null ){
+        super( env , name );
+        this.target = target;
+        this.init();
+    }
+
+    public init() : void {
+
+    }
+
+    public update(deltaTime: number): void {
+        this.onUpdate();
+    }
+
+    public onUpdate() {
+        
+    }
+    
+}
+
+export { ActiveEvent ,  MouseActiveEvent , EventListener  , EventType , EventSystem }
