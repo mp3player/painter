@@ -1,34 +1,67 @@
+import { Entity } from './entity.js';
 import { Shape } from './shape.js'
 import { Style } from './style.js';
+import { Box } from './util.js';
 import { Matrix, Vector } from './vector.js';
 
 
 
 abstract class Component {
 
-    public _shape : Shape | null;
+    public _entity : Entity | null;
     protected _name : string 
 
     public get name(){
         return this._name;
     }
 
-    public set shape( shape : Shape ){
-        this._shape = shape;
+    public set entity( shape : Entity ){
+        this._entity = shape;
     }
 
-    public get shape( ){
-        return this._shape;
+    public get entity( ){
+        return this._entity;
     }
 
     constructor( name : string = "Default Component" ){
         this._name = name;
-        this._shape = null;
+        this._entity = null;
     }
 
     public abstract update( deltaTime : number ) : void ;
 
 };
+
+class ShapeComponent extends Component {
+
+    public shape : Shape;
+    private points : Array< Vector > = new Array< Vector >; 
+    public hasUpdated : boolean = true;
+
+    public constructor( shape : Shape , name : string = "shape" ){
+        super( name );
+        this.shape = shape;
+    }
+
+    public update( deltaTime: number ): void {
+
+        if( this.hasUpdated ){
+
+            this.points = this.shape.getPoints();
+
+            this.hasUpdated = false;
+
+        }
+
+    }
+
+    public getPoints() : Array< Vector > {
+
+        return this.shape.getPoints();
+
+    }
+
+}
 
 class TransformComponent extends Component {
 
@@ -157,24 +190,22 @@ class TransformComponent extends Component {
 
 };
 
-
 abstract class Renderer extends Component {
     
-    private style : Style ;
+    public style : Style ;
     private needUpdate : boolean = true ;
 
     constructor( name : string = "Default CanvasRender" ){
         super( name );
+        this.style = new Style();
     }
     
     // TODO : implementation Component::update  
     abstract update( deltaTime : number ) : void ;
 
-    // TODO : implement Renderer::render
-    public abstract render( ): void;
 }
 
-class ShapeRendererComponent extends Renderer {
+class RendererComponent extends Renderer {
 
     constructor( name : string = "Default ShapeRendererComponent" ){
         super( name );
@@ -182,16 +213,15 @@ class ShapeRendererComponent extends Renderer {
 
     public update( deltaTime : number ) : void {
 
-    }
-
-    public render( ) : void {
+        
 
     }
-
 
 }
 
-class BorderBoxRendererComponent extends Renderer {
+class BoxComponent extends Component {
+
+    public box : Box;
 
     constructor( name : string = "Default BorderBoxComponent" ){
         super( name );
@@ -199,23 +229,31 @@ class BorderBoxRendererComponent extends Renderer {
 
     // TODO : override 
     // [ render | process ] the box of the shape this component attached to
-    public update( deltaTime : number ) : void { }
+    public update( deltaTime : number ) : void {
+        
+        // prepare cache
 
-    public render(): void { }
+        // update the border of shape 
+        let transformComponent = this.entity.findComponent( 'transform' );
+
+        if( transformComponent.hasUpdated ){
+            // recompute the border
+        }
+    }
 
 }
 
-class BorderCircleRendererComponent extends Renderer {
+class CircleComponent extends Renderer {
 
     constructor( name : string = "Default BorderCircleComponent" ){
         super( name );
     }
 
-    public update( deltaTime : number ) : void {}
+    public update( deltaTime : number ) : void {
 
-    public render() : void { }
+    }
 
 }
 
 
-export { Component , TransformComponent , ShapeRendererComponent , BorderBoxRendererComponent , BorderCircleRendererComponent }
+export { Component , ShapeComponent , TransformComponent , Renderer , RendererComponent , BoxComponent , CircleComponent }

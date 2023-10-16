@@ -3,6 +3,7 @@ import { Color } from "./style.js";
 import { Matrix, Vector } from "./vector.js";
 import { Tool } from "./util.js";
 import { PriorityQueue } from "./collection.js";
+import { Entity } from "./entity.js";
 
 /**
  * render:
@@ -24,61 +25,23 @@ import { PriorityQueue } from "./collection.js";
  */
 
 
-class Painter extends Shape{
+class Painter extends Entity{
 
-    public canvas : HTMLCanvasElement | null | undefined ;
-    public width : number ;
-    public height : number;
-    public background : Color;
-    public resizable : boolean;
-    public zoomable : boolean;
-    private _transformScreen : Matrix;           // coord => screen
-    private _inverseTransformScreen : Matrix;    // screen => coord 
+    constructor( ){
 
-    private queue : PriorityQueue<Shape> = new PriorityQueue<Shape>;
-
-    public get transformScreen(){
-        return this._transformScreen.clone();
-    }
-
-    public get inverseTransformScreen(){
-        return this._inverseTransformScreen.clone();
-    }
-
-    constructor(
-        width : number = innerWidth  , 
-        height : number = innerHeight 
-    ){
-        super(0,0);
-        
-        this.width = width;
-        this.height = height;
-        this.background = Color.White;
-        this.resizable = true;
-        this.zoomable = true;
+        super( );
         this.index = -1;
-        this._transformScreen = new Matrix();
-        this._inverseTransformScreen = new Matrix();
-        this.updateTransformPainter();
-    }
 
-    saveImage( x : number = 0 , y : number = 0 , width : number = innerWidth , height : number = innerHeight , fileName : string = "save.jpg" ){
-        
-        
-        
     }
-
 
     // update coordinateTransform
     updateTransformPainter() : void {
 
         // transform matrix apply to the painter
-        let transform = new Matrix();
+        // let transform = new Matrix();
 
-        transform = Matrix.Scale(transform , new Vector(1,-1));
-        transform = Matrix.Translate(transform , new Vector(this.width / 2 , this.height / 2));
-        this._transformScreen = transform;
-        this._inverseTransformScreen = transform.inverse();
+        // transform = Matrix.Scale(transform , new Vector(1,-1));
+        // transform = Matrix.Translate(transform , new Vector(this.width / 2 , this.height / 2));
 
     }
 

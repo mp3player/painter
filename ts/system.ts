@@ -1,5 +1,7 @@
+import { Buffer } from "./buffer.js";
 import { ArrayList, PriorityQueue } from "./collection.js";
-import { TransformComponent } from "./component.js";
+import { Renderer, RendererComponent, ShapeComponent, TransformComponent } from "./component.js";
+import { Entity } from "./entity.js";
 import { Painter } from "./painter.js";
 import { Arc, Circle, Ellipse, Path, Polygon, Rectangle, Shape, ShapeType, Text } from "./shape.js";
 import { Color, Style } from "./style.js";
@@ -7,13 +9,23 @@ import { Matrix, Vector } from "./vector.js";
 
 
 
-interface ShapeCache {
-    ref : Shape | Rectangle | Arc | Circle | Polygon | Text ,
-    type : ShapeType , 
-    buffer : any
-};
+class RenderBuffer extends Buffer {
 
-let bufferShape : ( shape : Shape ) => ShapeCache | null ;
+    private data : Array< Vector >
+    private path : Path2D;
+    private ref : Entity
+    
+    public constructor( data : Array< Vector > , ref : Entity ){
+        super()
+        this.data = data;
+        this.ref = ref;
+    }
+
+    getData() : Array< Vector > {
+        return this.data;
+    }
+
+};
 
 abstract class SystemBase {
 
@@ -42,7 +54,7 @@ class TransformSystem extends SystemBase {
     // update transform component
     public update( deltaTime : number ) : void {
 
-        let callback : Function = ( node : Shape ) => {
+        let callback : Function = ( node : Entity ) => {
 
             let worldTransform : TransformComponent = null;
             if( node.hasComponent('transform') ){
@@ -51,10 +63,10 @@ class TransformSystem extends SystemBase {
                 
             }
             
-            let list : ArrayList< Shape > = node.children;
+            let list : ArrayList< Entity > = node.children;
             for( let i = 0 ; i < list.length ; ++ i ){
                 
-                let shape : Shape = list.get( i );
+                let shape : Entity = list.get( i );
                 if( shape.hasComponent('transform') ){
                     let transform : TransformComponent = shape.findComponent( 'transform' );
                     
@@ -77,7 +89,7 @@ class TransformSystem extends SystemBase {
 
 class RenderSystem extends SystemBase {
 
-    protected queue : PriorityQueue< Shape > = new PriorityQueue< Shape >;
+    protected queue : PriorityQueue< Entity > = new PriorityQueue< Entity >;
 
     public constructor( scene : Painter , name : string = 'render' ) {
         super( scene , name );
@@ -86,26 +98,37 @@ class RenderSystem extends SystemBase {
     update( deltaTime : number ) : void {
         // get all shape 
 
+        this.enQueue();
+
+    }
+
+    protected enQueue() : void {
+
         this.queue.clear();
         let map : Map<string , boolean > = new Map<string , boolean>();
 
-        let enQueue = ( node : Shape ) => {
-            if( !map.has( node.uuid ) ){
+        let process = ( node : Entity ) => {
+
+            if( !map.has( node.uuid ) && node.hasComponent('renderer') ){
                 this.queue.push( node );
                 map.set( node.uuid , true );
             }
+
             let list : ArrayList< Shape > = node.children;
             for( let i = 0 ; i < list.length ; ++ i ){
-                let shape : Shape = list.get( i );
-                enQueue( shape );
+                let shape : Entity = list.get( i );
+                process( shape );
             }
+            
         }
 
         for( let i = 0 ; i < this.scene.children.length ; ++ i ){
-            enQueue( this.scene.children.get( i ) );
+            
+            process( this.scene.children.get( i ) );
         }
 
     }
+
 }
 
 class CanvasRenderSystem extends RenderSystem {
@@ -116,7 +139,7 @@ class CanvasRenderSystem extends RenderSystem {
     private width : number = 0;
     private height : number = 0;
 
-    private renderBuffer : Map< string , ShapeCache > = new Map< string , ShapeCache >;
+    private renderBuffer : Map< string , RenderBuffer > = new Map< string , RenderBuffer >;
 
     public constructor( scene : Painter , name : string = 'render' , canvas : HTMLCanvasElement | null ) {
         super( scene , name );
@@ -158,9 +181,11 @@ class CanvasRenderSystem extends RenderSystem {
     public flush( ) : void{
         if( !this.pen ) return ;
 
+        let renderComponent : RendererComponent = this.scene.findComponent('renderer');
+
         this.save();
 
-        this.beginFill( this.scene.background );
+        this.beginFill( renderComponent.style.background );
 
         this.beginPath( Color.Black );
         this.moveTo( new Vector( -this.width / 2 , this.height / 2) );
@@ -176,7 +201,9 @@ class CanvasRenderSystem extends RenderSystem {
     }
 
     // TODO : finish the correction
-    public setStyle(  style : Style ) : void {
+    public setStyle(  renderComponent : Renderer ) : void {
+
+        let style : Style = renderComponent.style ;
         let pen = this.pen;
         if( style.background ) pen.fillStyle = style.background.toString();
         if( style.color ) pen.strokeStyle = style.color.toString();
@@ -184,14 +211,7 @@ class CanvasRenderSystem extends RenderSystem {
         pen.lineJoin = 'round';
         pen.lineCap = 'round';
         pen.globalAlpha = style.opacity;
-    }
 
-    private stroke( ) : void {
-        this.pen.stroke();
-    }
-
-    private fill( ) : void {
-        this.pen.fill();
     }
 
     private moveTo( point : Vector ) : void {
@@ -200,14 +220,6 @@ class CanvasRenderSystem extends RenderSystem {
 
     private lineTo( point : Vector ) : void {
         this.pen.lineTo( point.x , point.y );
-    }
-
-    public setRender( style : Style ) : void {
-        if(style.background != null)
-            this.fill();
-        
-        if(style.lineWidth > 0)
-            this.stroke( );
     }
 
     private save() : void {
@@ -245,13 +257,16 @@ class CanvasRenderSystem extends RenderSystem {
         this.restore();
     }
 
-    private fillShape( buffer : ShapeCache , style : Style  ) : void {
-        let edge : Array< Vector > = buffer.buffer.edge;
+    private fillShape( edge : Array< Vector > , renderComponent : Renderer  ) : void {
+
+  
         if( edge.length <= 0 ) return ;
 
         this.sandboxRender( ( ) => {
-            this.beginFill( style.background );
-            this.beginPath( style.color );
+
+            this.setStyle( renderComponent );
+            this.beginFill( renderComponent.style.background );
+            this.beginPath( renderComponent.style.color );
             
             this.moveTo( edge.at( 0 ) );
             for( let i = 1 ; i < edge.length ; ++ i ){
@@ -263,271 +278,82 @@ class CanvasRenderSystem extends RenderSystem {
         } )
     };
 
-    private strokeShape( buffer : ShapeCache , style : Style  ) : void {}
+    private strokeShape( buffer : RenderBuffer , renderComponent : Renderer ) : void {
+
+        if( buffer.getData().length <= 0 ) return ;
+        let edge : Array< Vector > = buffer.getData();
+
+        this.sandboxRender( ( ) => {
+            this.save();
+
+            this.setStyle( renderComponent );
+            this.beginPath( renderComponent.style.color );
+
+            this.moveTo( edge.at( 0 ) );
+            for( let i = 1 ; i < edge.length ; ++ i ){
+                this.lineTo( edge.at( i ) );
+            }
+            this.closePath();
+            this.endPath();
+
+            this.restore();
+        })
+
+    }
 
     update(deltaTime: number): void {
 
         // Build PriorityQueue to Render
-        super.update( deltaTime );
+        this.enQueue();
+
+        // clear RenderContent
         this.flush();
 
         // render the queue in order
         while( !this.queue.isEmpty() ){
-            let shape : Shape = this.queue.top();
+
+            let node : Entity = this.queue.top();
+            let transformComponent : TransformComponent = node.findComponent('transform');
+            let shapeComponent : ShapeComponent = node.findComponent('shape');
+            let renderComponent : RendererComponent = node.findComponent('renderer');
+            renderComponent.update( deltaTime );
             this.queue.pop();
-            
-            // draw shape
-            let buffer : ShapeCache = null;
-            // console.log( shape , shape.findComponent('transform').hasUpdated )
-            if( this.renderBuffer.has( shape.uuid ) && !shape.findComponent('transform').hasUpdated ){
-                buffer = this.renderBuffer.get( shape.uuid );
+
+            let points = shapeComponent.getPoints();
+            let buffer : RenderBuffer = null;
+
+            if( !this.renderBuffer.has( node.uuid ) || node.findComponent('transform').hasUpdated ){
+                buffer = new RenderBuffer( Matrix.TransformSequence( transformComponent.transformShapeWorld, points ) , node );
+                this.renderBuffer.set( node.uuid , buffer );
             }else{
-                buffer = bufferShape( shape );
+                
+                buffer = this.renderBuffer.get( node.uuid );
             }
 
-            if( buffer != null ){
-                this.renderBuffer.set( shape.uuid , buffer );
-                // render buffer;
-                let style : Style = buffer.ref.style;
-                if( style.background != null ){
-                    this.fillShape( buffer , style ); 
-                }else{
-                    this.strokeShape( buffer , style );
-                }
+            if( shapeComponent.shape instanceof Path ){
+                    console.log(123)
+                this.strokeShape( buffer , renderComponent );
+
+            }else if( shapeComponent.shape instanceof Text ){
+
+            }else{
+
+                this.fillShape( buffer.getData() , renderComponent )
+
             }
+
             // TODO : render the shape according to the Cache and Render Component
+
         }
     }
 
 }
 
+class BoxRenderSystem extends CanvasRenderSystem {
 
-bufferShape = function( node : Shape | any  ) : ShapeCache | null {
-
-    // this component is not renderable
-    if( !node.hasComponent('renderer') || !node.visible ) return null
-
-    // check whether there exists cache consistent with the shape
-
-
-    let nodeType = node.shapeType;
-    let cache : ShapeCache = null;
-
-    switch ( nodeType ){
-
-        case ShapeType.RECTANGLE : {
-
-            let shape : Rectangle = node;
-            let transformScreen = shape.findComponent('transform').transformShapeWorld ;
-            let halfWidth = shape.width / 2;
-            let halfHeight = shape.height / 2;
-
-            let edge = Matrix.TransformSequence( 
-                transformScreen , 
-                [   
-                    new Vector(- halfWidth ,  halfHeight),
-                    new Vector(  halfWidth ,  halfHeight),
-                    new Vector(  halfWidth , -halfHeight),
-                    new Vector(- halfWidth , -halfHeight)
-                ]
-            );
-            cache = { 
-                buffer : { 
-                    edge 
-                } , 
-                ref : shape , 
-                type : nodeType 
-            };
-    
-        }break;
-
-        case ShapeType.ARC : {
-
-            let shape : Arc = node;
-            let transformScreen : Matrix = shape.findComponent('transform').transformShapeWorld
-
-            let startAngle : number = shape.startAngle * Math.PI / 180;
-            let endAngle : number = shape.endAngle * Math.PI / 180;
-
-            let radius = (new Vector(0,shape.radius)).applyTransform( transformScreen ).length();
-
-            let length = 2 * Math.PI * radius;
-            let step = ( endAngle - startAngle ) / length;
-
-            let edge : Array< Vector > = new Array< Vector >();
-
-            for( let i = startAngle ; i < endAngle ; i += step ){
-                
-                let x = Math.cos( i ) , y = Math.sin( i );
-                let vert = new Vector( x , y ).applyTransform( transformScreen )
-                edge.push( vert );
-
-            }
-            
-            cache = { 
-                buffer : { 
-                    center : shape.findComponent('transform').center , 
-                    radius : radius ,
-                    startAngle : startAngle , 
-                    endAngle : endAngle , 
-                    edge 
-                } , 
-                ref : shape , 
-                type : nodeType
-            };
-       
-        }break;
+    update(deltaTime: number): void {
         
-        case ShapeType.CIRCLE : {
-            
-            let shape : Circle = node;
-            let transformScreen : Matrix = shape.transform.transformShapeWorld ;
-
-            let startAngle = shape.startAngle * Math.PI / 180;
-            let endAngle = shape.endAngle * Math.PI / 180;
-
-            let step = ( endAngle - startAngle ) / 100;
-
-            let edge : Array< Vector > = new Array< Vector >();
-
-
-            for( let i = startAngle ; i < endAngle ; i += step ){
-                
-                edge.push(
-                    new Vector( Math.cos( i ) * shape.radius , Math.sin( i ) * shape.radius )
-                );
-
-            }
-
-            edge = Matrix.TransformSequence( transformScreen , edge );
-            
-            cache = { 
-                buffer : { 
-                    center : shape.transform.center , 
-                    radius : shape.radius ,
-                    startAngle : 0 , 
-                    endAngle : Math.PI * 2 , 
-                    edge 
-                } , 
-                ref : shape , 
-                type : nodeType
-            };
-
-        }break;
-
-        case ShapeType.ELLIPSE : {
-
-            let shape : Ellipse = node;
-            let mat = new Matrix( shape.a , 0, 0, 0, shape.b, 0, 0, 0, 1 );
-            let transformScreen : Matrix = Matrix.Multiply( shape.transform.transformShapeWorld , mat );
-
-            let startAngle = 0;
-            let endAngle = Math.PI * 2;
-            let step = ( endAngle - startAngle ) / 100;
-            let edge : Array< Vector > = new Array< Vector >();
-
-            for( let i = startAngle ; i < endAngle ; i += step ){
-                edge.push(
-                    new Vector( Math.cos( i ) , Math.sin( i ) )
-                );
-            }
-
-            edge = Matrix.TransformSequence( transformScreen , edge );
-
-            cache = { 
-                buffer : { 
-                    a : shape.a ,
-                    b : shape.b,
-                    edge ,
-                } , 
-                ref : shape , 
-                type : nodeType
-            };
-
-        }break;
-
-        case ShapeType.PATH : {
-            
-            let shape : Path = node;
-            let transformScreen = shape.transform.transformShapeWorld ;
-
-            let edge : Array< Vector > = new Array< Vector >();
-            let _edge : Array< Vector > = new Array< Vector >();
-
-            for(let i = 0 ; i < shape.points.length ; ++ i){
-                let vert = shape.points[i]
-                edge.push(vert);
-            }
-
-            edge = Matrix.TransformSequence( transformScreen , edge );
-
-            cache = { 
-                buffer : { 
-                    edge  
-                } , 
-                ref : shape , 
-                type : nodeType
-            };
-
-        }break;
-
-        case ShapeType.POLYGON : {
-
-            let shape : Polygon = node;
-            let transformScreen = shape.transform.transformShapeWorld ;
-
-            let edge : Array< Vector > = new Array< Vector >();
-
-            for(let i = 0 ; i < shape.vertexes.length ; ++ i){
-                edge.push( shape.vertexes[i] );
-            }
-
-            edge = Matrix.TransformSequence( transformScreen , edge );
-
-            cache = { 
-                buffer : { 
-                    edge 
-                } , 
-                ref : shape , 
-                type : nodeType
-            };
-
-        }break;
-        
-        case ShapeType.TEXT : {
-
-            let shape : Text = node;
-            let transformScreen = shape.transform.transformShapeWorld ;
-
-            let font = 'bold ' + shape.size + 'px ' + shape.family;
-
-            cache = {
-                buffer : {
-                    text : shape.text , 
-                    font ,
-                    position : shape.transform.center.applyTransform( transformScreen )
-                },
-                ref : shape ,
-                type : nodeType
-            }
-
-        }break
-
-        case ShapeType.SHAPE:{
-
-            cache = { 
-                buffer : { 
-                    edge : null 
-                } , 
-                ref : node , 
-                type : nodeType 
-            };
-
-        }break;
-
     }
-
-    return cache;
 
 }
 

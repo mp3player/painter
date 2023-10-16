@@ -122,8 +122,10 @@ class EventSystem extends SystemBase {
     }
 
     public init() : void {
-
+        
     }
+
+
 
     public update(deltaTime: number): void {
         this.onUpdate();

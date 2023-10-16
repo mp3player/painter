@@ -3,153 +3,20 @@ import { Box, Tool } from "./util.js";
 import { Matrix, Vector } from "./vector.js";
 import { Style } from './style.js'
 import { EventListener } from "./event.js";
-import { Component, TransformComponent } from './component.js'
-import { ShapeRendererComponent } from "./component.js";
+import { BoxComponent, Component, TransformComponent } from './component.js'
+import { RendererComponent } from "./component.js";
 
 enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT };
 
-class Shape extends EventListener {
-
-    public style : Style;
-
-    public box : Box;
-    public children : ArrayList<Shape>;
-    public components : Map< string ,Component > = new Map< string , Component >();
-    public transform : TransformComponent = new TransformComponent( 'transform' );
-    
-    public name : string;
-    public visible : boolean;
-    public parent : Shape;
-    public dragable: boolean;
-
-    protected _index : number;
-    protected _shapeNeedUpdate : boolean;
-    protected _uuid : string;
-
-    public set index( _index : number ) {
-        this._index = _index;
-        this._shapeNeedUpdate = true;
-    }
-
-    public get index( ) { return this._index ;}
-
-    public get shapeNeedUpdate(){ return this._shapeNeedUpdate ; }
-
-    public get uuid() { return this._uuid ; };
+class Shape {
 
     public get shapeType() { return ShapeType.SHAPE; }
 
-    constructor( x = 0 , y = 0 ){
-        super();
-        this.style = new Style();
+    constructor(){ }
 
-        // whether the shape need to be updated , including : shape data
-        this._shapeNeedUpdate = false;
-        // whether the shape need to be updated , including : transform matirx
-
-        this.box = new Box();
-
-        this.children = new ArrayList();
-
-        this._uuid = Tool.UUID();
-
-        this.name = '';
-
-        this.index = 0;
-
-        this.visible = true;
-        this.dragable = true;
-
-        this.addComponent( this.transform );
-        this.addComponent( new ShapeRendererComponent( 'renderer' ) );
-
-    }
-
-    setStyle( style : Style ) : void {
-        this.style = style;
-    }
-
-    add(shape : Shape) : void { 
-
-        this.children.add(shape);
-        shape.parent = this;
-
-    }
-
-    remove( uuid : string ) : Shape | null {
-        for( let i = 0 ; i < this.children.length ; ++ i ){
-            if( this.children.get(i).uuid == uuid ){
-                return this.children.remove( i );
-            }
-        }
-        return null;
-    }
-
-    // TODO : add traverse finding
-    getShapeByID( uuid : string ) : Shape | null {
-        for(let i = 0 ; i < this.children.length ; ++ i){
-            if(this.children.get(i).uuid == uuid)
-                return this.children.get(i);
-        }
-        return null;
-    }
-
-    // component related
-    addComponent( component : Component ) : void {
-
-        this.components.set( component.name , component );
-        component.shape = this;
-        
-    }
-
-    hasComponent( name : string ) : boolean {
-
-        return this.components.has( name );
-
-    }
-
-    findComponent( name : string ) : Component | any {
-        
-        if( this.hasComponent( name ) ){
-            return this.components.get( name );
-        }
-        return null;
-
-    }
-
-    removeComponent( name : string ) : boolean {
-
-        if( this.hasComponent( name ) ) {
-            return this.components.delete( name );
-        }
-        return false;
-
-    }
-
-    // depth first traverse
-    traverse( callback = ( d : Shape ) => {} ) : void {
-        
-        this.children.forEach( (d : Shape) => {
-            callback( d );
-            d.traverse( callback );
-        })
-    }
-
-    // this should be overrided according the shape 
-    clone() : Shape {
-        
-        let shape = new Shape();
-        // TODO : clone the properties of the shape
-        
-        // clone children
-        for( let i = 0 ; i < this.children.length ; ++ i){
-            shape.add( this.children.get(i).clone() );
-        }
-        return shape;
-
-    }
-
-
+    getPoints() : Array< Vector > {
+        return new Array< Vector > ();
+    };
 
 }
 
@@ -159,16 +26,18 @@ class Path extends Shape {
 
     public get shapeType() { return ShapeType.PATH; }
 
-    constructor(x = 0 , y = 0 ){
-        super( x , y );
+    constructor( ){
+        super();
         this.points = new Array<Vector>();
     }
 
     append( point : Vector ){
         this.points.push( point );
-        this.box.append( point );
-        this._shapeNeedUpdate = true;
     }
+
+    getPoints() : Array< Vector > {
+        return this.points;
+    };
 
 }
 
@@ -182,14 +51,32 @@ class Arc extends Shape {
 
     public get shapeType() { return ShapeType.ARC; }
 
-    constructor( startAngle : number = 0.0 , endAngle : number = 100.0 , radius : number = 100 , x = 0 , y = 0){
-        super(x,y);
+    constructor( startAngle : number = 0.0 , endAngle : number = 90.0 , radius : number = 100){
 
-        this.startAngle = startAngle;
-        this.endAngle = endAngle;
+        super();
+
+        this.startAngle = startAngle * Math.PI / 180;
+        this.endAngle = endAngle * Math.PI / 180;
         this.radius = radius;
         
     }
+
+    getPoints() : Array< Vector > {
+        
+        // TODO : step should be calculated according the radius and the transform matrix
+        let step : number = Math.floor( Math.PI * this.radius / 4 );
+        let stride : number = ( this.endAngle - this.startAngle ) / step;
+        let points : Array< Vector > = new Array< Vector >();
+
+        for( let i = 0 ; i < step ; ++ i ){
+            let x : number = Math.cos( i * stride ) * this.radius;
+            let y : number = Math.sin( i * stride ) * this.radius;
+            points.push( new Vector( x , y ) );
+        }
+        
+        return points;
+    
+    };
 
 }
 
@@ -197,10 +84,9 @@ class Circle extends Arc{
 
     public get shapeType() { return ShapeType.CIRCLE; }
 
-    constructor( r = 1 ,  x = 0 , y = 0 ){
-        super(0 , 360 , r , x , y);
+    constructor( r = 1 ){
+        super(0 , 360 , r);
     }
-
 
 }
 
@@ -211,11 +97,24 @@ class Ellipse extends Shape {
 
     public get shapeType() { return ShapeType.ELLIPSE; }
 
-    constructor( a = 1 , b = 1 , x = 0 , y = 0 ){
-        super( x , y );
+    constructor( a = 1 , b = 1 ){
+        super();
         this.a = a;
         this.b = b;
     }
+
+    getPoints() : Array< Vector > {
+        let mat : Matrix = new Matrix( this.a , 0, 0, 0, this.b, 0, 0, 0, 1 );
+        let step : number = Math.floor( Math.PI * 2 * Math.sqrt( this.a * this.b ) );
+        let stride : number = Math.PI * 2 / step;
+        let edge : Array< Vector > = new Array< Vector >;
+
+        for( let i = 0 ; i < step ; ++i ){
+            edge.push( new Vector( Math.cos( i * stride ) , Math.sin( i * stride ) ).applyTransform( mat ) );
+        }
+
+        return edge;
+    };
 
 
 };
@@ -228,41 +127,58 @@ class Rectangle extends Shape{
     public get shapeType() { return ShapeType.RECTANGLE; }
 
     constructor( width : number , height : number , x = 0 , y = 0 ){
-        super(x,y);
+        super();
         this.width = width;
         this.height = height;
     }
 
+    getPoints() : Array< Vector > {
+        
+        let hw : number = this.width / 2;
+        let hh : number = this.height / 2;
+        
+        return [
+            new Vector( -hw , -hh ),
+            new Vector(  hw , -hh ),
+            new Vector(  hw ,  hh ),
+            new Vector( -hw ,  hh ),
+        ];
+
+    };
 
 }
 
 class Polygon extends Shape{
     
-    public vertexes : Array<Vector>;
+    public points : Array<Vector>;
 
     public get shapeType() { return ShapeType.POLYGON; }
 
-    constructor( vertexes : Array<Vector> , x = 0 , y = 0 ){
-        super(x , y);
-        this.vertexes = vertexes;
+    constructor( points : Array<Vector>){
+        super();
+        this.points = points;
     }
 
     append( vertex : Vector ){
 
-        this.vertexes.push( vertex );
-        this._shapeNeedUpdate = true;
+        this.points.push( vertex );
 
     }
+
+    getPoints() : Array< Vector > {
+        return this.points;
+    };
 
 
 }
 
 class Convex extends Polygon{
 
-    constructor(vertexes : Array<Vector> , x : number , y : number ){
-        vertexes = Tool.GetConvex(vertexes);
-        super(vertexes , x,y);
+    constructor( points : Array<Vector> ){
+        points = Tool.GetConvex( points );
+        super( points );
     }
+
 
 }
 
@@ -272,12 +188,16 @@ class QuadraticBezierCurve extends Path{
     public p1 : Vector;
     public p2 : Vector;
 
-    constructor( p0 : Vector , p1 : Vector , p2 : Vector , x = 0 , y = 0 ){
-        super(x , y);
+    constructor( p0 : Vector , p1 : Vector , p2 : Vector ){
+        super();
         this.p0 = p0 ;
         this.p1 = p1 ;
         this.p2 = p2 ;
     }
+
+    getPoints() : Array< Vector > {
+        return new Array< Vector > ();
+    };
 
 
 }
@@ -303,7 +223,6 @@ class Text extends Shape {
 
     public set size( size : number ) { 
         this._size = size;
-        this._shapeNeedUpdate = true;
     }
 
     public set baseline( _baseline : string ) { 
@@ -312,15 +231,10 @@ class Text extends Shape {
 
     public set family( family : string ) { 
         this._family = family;
-        this._shapeNeedUpdate = true;
     }
-
-
-
-
     
-    constructor( text : string , x : number = 0 , y : number = 0 ){
-        super( x , y );
+    constructor( text : string ){
+        super( );
         this.text = text;
         this.fontSize = 10;
     }

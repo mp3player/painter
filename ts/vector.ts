@@ -92,18 +92,13 @@ class Vector{
      * 1 , 4 , 7
      * 2 , 5 , 8
      */
+    // TODO : vector is 2-d , the 3rd row should be 1;
     applyTransform( mat : Matrix  ) : Vector {
         let v0 = mat.data[0] * this.x + mat.data[3] * this.y + mat.data[6] * 1;
         let v1 = mat.data[1] * this.x + mat.data[4] * this.y + mat.data[7] * 1;
-        let v3 = mat.data[2] * this.x + mat.data[5] * this.y + mat.data[8] * 1;
+        // let v3 = mat.data[2] * this.x + mat.data[5] * this.y + mat.data[8] * 1; 
 
-        if(v3 == 0){
-            throw new Error(" the (x,y) of the vector is infinity");
-        }else{
-            v0 /= v3;
-            v1 /= v3;
-            return new Vector(v0,v1);
-        }
+        return new Vector(v0,v1);
 
     }
 
