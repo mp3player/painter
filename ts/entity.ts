@@ -1,5 +1,6 @@
 import { ArrayList } from "./collection.js";
-import { Component, RendererComponent, TransformComponent } from "./component.js";
+import { BoxComponent, CircleComponent, Component , TransformComponent } from "./component.js";
+import { RendererComponent } from "./render.js";
 import { Tool } from "./util.js";
 
 class Entity {
@@ -24,6 +25,7 @@ class Entity {
         this._uuid = Tool.UUID();
         this.addComponent( this.transform ) ;
         this.addComponent( new RendererComponent( 'renderer' ) ) ;
+        this.addComponent( new CircleComponent('box') );
         
     }
 
@@ -74,7 +76,6 @@ class Entity {
         return false;
 
     }
-
 
 }
 

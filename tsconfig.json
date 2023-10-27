@@ -12,7 +12,7 @@
     "files": [
         "ts/collection.ts",
         "ts/event.ts",
-        "ts/gjk.ts",
+        "ts/geometry.ts",
         "ts/noise.ts",
         "ts/painter.ts",
         "ts/shape.ts",
@@ -27,6 +27,8 @@
         "ts/component.ts",
         "ts/entity.ts",
         "ts/system.ts",
-        "ts/buffer.ts"
+        "ts/buffer.ts",
+        "ts/physics.ts",
+        "ts/render.ts",
     ]
   }

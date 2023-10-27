@@ -106,6 +106,14 @@ class Vector{
         return new Vector( this.x * factor , this.y * factor );
     }
 
+    reverse() : Vector {
+        return this.scale( -1 );
+    }
+
+    perpendicular() : Vector {
+        return new Vector( this.y , this.x );
+    }
+
     dot( v : Vector ) : number {
         return this.x * v.x + this.y * v.y;
     }
@@ -150,6 +158,17 @@ class Vector{
         return ( v0.x == v1.x && v0.y == v1.y ) ;
     }
 
+    static GetNormal( v0 : Vector , v1 : Vector ) : Vector {
+
+        let normal : Vector = new Vector( v0.y - v1.y , v1.x - v0.x );
+
+        
+
+        return normal;
+
+    }
+
+    static O : Vector = new Vector(0,0);
     static X : Vector = new Vector(1,0);
     static Y : Vector = new Vector(0,1);
 

@@ -4,9 +4,12 @@ import { Circle , Rectangle , Polygon , Ellipse , Path , Text } from './shape.js
 import { Color } from './style.js';
 import { Vector } from './vector.js';
 import { ActiveEvent , EventSystem, MouseActiveEvent } from './event.js';
-import { CanvasRenderSystem, TransformSystem } from './system.js';
+import { TransformSystem } from './system.js';
 import { Entity } from './entity.js';
 import { ShapeComponent } from './component.js';
+import { PhysicsSystem } from './physics.js';
+import { CanvasRenderSystem } from './render.js'
+import { Geometry } from './geometry.js';
 
 let ellipse : Entity;
 
@@ -20,7 +23,8 @@ class Application {
 
     private renderSystem : CanvasRenderSystem ;
     private transformSystem : TransformSystem ;
-    private eventSystem : EventSystem;
+    private eventSystem : EventSystem ;
+    private physics : PhysicsSystem ;
 
     private constructor( ){
 
@@ -30,6 +34,7 @@ class Application {
         this.renderSystem = new CanvasRenderSystem( this.painter , 'render' , this.context );
         this.transformSystem = new TransformSystem( this.painter , 'transform' );
         this.eventSystem = new EventSystem( this.painter , 'event' , this.context );
+        this.physics = new PhysicsSystem( this.painter , 'physics' );
 
         this.width = innerWidth;
         this.height = innerHeight;
@@ -46,41 +51,29 @@ class Application {
 
         this.painter.add( Application.createCircle( 100 ) );
 
-        this.painter.add( Application.createPolygon() );
+        // this.painter.add( Application.createPolygon() );
     
         ellipse = Application.createEllipse( 100 , 50 );
         ellipse.transform.translate( new Vector( 100 , 200 ) );
-        this.painter.add(  ellipse );
+        this.painter.add( ellipse );
 
         this.painter.add( Application.randomPath() );
 
-
-        // let center = new Circle( 100 );
-        // center.findComponent('renderer').style.background = Color.Red;
-        // this.painter.add( center );
-
-        // let border = new BorderBoxComponent();
-        // center.addComponent( border );
-        // let rect : Rectangle = new Rectangle(20,20,200,300);
-        // rect.findComponent('renderer').style.background = Color.Black;
+        let vertexes = [ -114 ,309, -168 ,225, -130 ,164, -134 ,92, -180 ,124, -202 ,-16, -131 ,-109, -62 ,-58, 117 ,-181, 50 ,8, 188, -9, 257, 183, 113, 124, 121, 303, -5, 256]
         
-        // this.painter.add( rect );
+        let poly = []
 
-        // center.index = 10;
+        for( let i = 0 ; i < vertexes.length ; i += 2 ){
+            let x = vertexes[i];
+            let y = vertexes[i + 1];
+            poly.push( new Vector( x , y ) );
+        }
 
+        let triangles = Geometry.triangulate( poly );
 
-
-
-        // let polygon = new Polygon([] , 0 , 0);
-        // polygon.append( new Vector(  0 , 0 ) )
-        // polygon.append( new Vector(  100 , 100 ) )
-        // polygon.append( new Vector(  100,-300) )
-
-        // rect.add( polygon )
-        // document.onmousedown = () => {
-        //     rect.removeComponent('renderer')
-        // }
-        
+        for( let triangle of triangles ){
+            this.painter.add( Application.createTriangle( triangle ) );
+        }
 
 
         // let str = `「如果尖銳的批評完全消失，溫和的批評將會變得刺耳。\n
@@ -116,9 +109,12 @@ class Application {
 
     update( deltaTime : number ) : void {
 
+        this.physics.update( deltaTime );
         this.transformSystem.update( deltaTime );
         this.renderSystem.update( deltaTime );
 
+        ellipse.transform.rotate( .05 );
+        
     }
 
     run() : void {
@@ -169,9 +165,17 @@ class Application {
         
         let poly = new Polygon([]);
 
-        poly.append( new Vector( 0 , 0  ) );
-        poly.append( new Vector( 100 , 100 ) );
-        poly.append( new Vector( 100 , 0 ) );
+        let vertexes = [ -114 ,309, -168 ,225, -130 ,164, -134 ,92, -180 ,124, -202 ,-16, -131 ,-109, -62 ,-58, 117 ,-181, 50 ,8, 188, -9, 257, 183, 113, 124, 121, 303, -5, 256]
+
+        for( let i = 0 ; i < vertexes.length ; i += 2 ){
+            let x = vertexes[i];
+            let y = vertexes[i + 1];
+            poly.append( new Vector( x , y ) );
+        }
+
+        console.log( poly.points )
+
+        Geometry.triangulate( poly.points );
 
         let shapeComponent : ShapeComponent = new ShapeComponent( poly );
         let entity : Entity = new Entity();
@@ -192,6 +196,19 @@ class Application {
 
         let shapeComponent : ShapeComponent = new ShapeComponent( poly );
         let entity : Entity = new Entity();
+        entity.addComponent( shapeComponent );
+        return entity ;
+
+    }
+    
+    static createTriangle( points : Array< Vector >){
+
+        let poly = new Polygon( points );
+
+        let shapeComponent : ShapeComponent = new ShapeComponent( poly );
+        let entity : Entity = new Entity();
+        entity.findComponent('renderer').style.background = Color.Red;
+        entity.findComponent('renderer').style.color = Color.Blue;
         entity.addComponent( shapeComponent );
         return entity ;
 

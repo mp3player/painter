@@ -1,9 +1,8 @@
 import { Entity } from './entity.js';
-import { Shape } from './shape.js'
+import { Circle, Shape } from './shape.js'
 import { Style } from './style.js';
-import { Box } from './util.js';
+import { BorderBox, BorderCircle } from './util.js';
 import { Matrix, Vector } from './vector.js';
-
 
 
 abstract class Component {
@@ -190,41 +189,16 @@ class TransformComponent extends Component {
 
 };
 
-abstract class Renderer extends Component {
-    
-    public style : Style ;
-    private needUpdate : boolean = true ;
-
-    constructor( name : string = "Default CanvasRender" ){
-        super( name );
-        this.style = new Style();
-    }
-    
-    // TODO : implementation Component::update  
-    abstract update( deltaTime : number ) : void ;
-
-}
-
-class RendererComponent extends Renderer {
-
-    constructor( name : string = "Default ShapeRendererComponent" ){
-        super( name );
-    }
-
-    public update( deltaTime : number ) : void {
-
-        
-
-    }
-
-}
-
 class BoxComponent extends Component {
 
-    public box : Box;
+    public borderBox : BorderBox;
+    public transform : Matrix;
+    public visible : boolean = true;
+    public dash : number = 4;
 
     constructor( name : string = "Default BorderBoxComponent" ){
         super( name );
+        this.borderBox = new BorderBox();
     }
 
     // TODO : override 
@@ -234,26 +208,43 @@ class BoxComponent extends Component {
         // prepare cache
 
         // update the border of shape 
-        let transformComponent = this.entity.findComponent( 'transform' );
+        let transformComponent : TransformComponent = this.entity.findComponent( 'transform' );
+        let shapeComponent : ShapeComponent = this.entity.findComponent('shape');
+
+        // recompute the border
+        let points : Array< Vector > = shapeComponent.getPoints();
+
+        this.borderBox.reset();
+        for( let i = 0 ; i < points.length ; ++ i ){
+            this.borderBox.merge( points.at( i ) );
+        }
 
         if( transformComponent.hasUpdated ){
-            // recompute the border
+            this.transform = transformComponent.transformShapeWorld.clone();
         }
+
     }
 
 }
 
-class CircleComponent extends Renderer {
+class CircleComponent extends BoxComponent {
+
+    public borderCircle : BorderCircle;
 
     constructor( name : string = "Default BorderCircleComponent" ){
         super( name );
     }
 
     public update( deltaTime : number ) : void {
+        super.update( deltaTime );
+
+        let radius = this.borderBox.right - this.borderBox.left;
+        if( this.borderBox.top - this.borderBox.bottom > radius ) radius = this.borderBox.top - this.borderBox.bottom;
+        let center = new Vector( ( this.borderBox.left + this.borderBox.right ) / 2 , ( this.borderBox.top + this.borderBox.bottom ) / 2 );
+        this.borderCircle = new BorderCircle( center , radius / 2 );
 
     }
 
 }
 
-
-export { Component , ShapeComponent , TransformComponent , Renderer , RendererComponent , BoxComponent , CircleComponent }
+export { Component , ShapeComponent , TransformComponent ,  BoxComponent , CircleComponent }

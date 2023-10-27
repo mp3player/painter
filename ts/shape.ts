@@ -1,10 +1,9 @@
 import { ArrayList } from "./collection.js";
-import { Box, Tool } from "./util.js";
+import { BorderBox, Tool } from "./util.js";
 import { Matrix, Vector } from "./vector.js";
 import { Style } from './style.js'
 import { EventListener } from "./event.js";
 import { BoxComponent, Component, TransformComponent } from './component.js'
-import { RendererComponent } from "./component.js";
 
 enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT };
 
