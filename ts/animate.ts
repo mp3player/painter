@@ -1,7 +1,7 @@
 import { ArrayList } from './collection.js';
 import { Tool } from './util.js'
 import { Color } from './style.js'
-import { Vector } from './vector.js';
+import { Vector3 } from './vector.js';
 
 
 type BlendFunction = ( percent : number  ) => number;
@@ -119,15 +119,15 @@ class AnimateColor extends Animate< Color > {
 
 }
 
-class AnimateVector extends Animate< Vector > {
+class AnimateVector3 extends Animate< Vector3 > {
 
     public update( w : number ) : void {
 
-        let offset : Vector = this._target.sub( this._source );
+        let offset : Vector3 = this._target.sub( this._source );
         let x = this._blendFunction( w ) * offset.x + this._source.x;
         let y = this._blendFunction( w ) * offset.y + this._source.y;
 
-        this._value = new Vector( x , y );
+        this._value = new Vector3( x , y );
 
     }
 

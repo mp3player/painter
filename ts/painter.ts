@@ -1,8 +1,5 @@
 import { Arc, Circle , Polygon, Rectangle, Shape , ShapeType, Text } from "./shape.js";
-import { Color } from "./style.js";
-import { Matrix, Vector } from "./vector.js";
-import { Tool } from "./util.js";
-import { PriorityQueue } from "./collection.js";
+
 import { Entity } from "./entity.js";
 
 /**

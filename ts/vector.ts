@@ -1,3 +1,7 @@
+import { Matrix3 } from './matrix.js'
+
+
+
 const cos = Math.cos;
 const sin = Math.sin;
 const hypot = Math.hypot
@@ -47,14 +51,16 @@ class Complex {
     
 }
 
-class Vector{
+class Vector3{
 
     public x : number;
     public y : number;
+    public z : number = 1;
 
-    constructor( x : number = 0 , y : number = 0 ){
+    constructor( x : number = 0 , y : number = 0 , z : number = 1 ){
         this.x = x;
         this.y = y;
+        this.z = z;
     }
 
     squareLength() : number {
@@ -65,26 +71,26 @@ class Vector{
         return hypot(this.x , this.y);
     }
 
-    equal( v : Vector ) : boolean {
+    equal( v : Vector3 ) : boolean {
         return (this.x == v.x) && (this.y == v.y)
     }
 
-    normalize() : Vector {
+    normalize() : Vector3 {
         let len = this.length();
 
         if(len != 0){
             return this.scale( 1 / len );
         }
 
-        return new Vector();
+        return new Vector3();
     }
 
-    add( v : Vector ) : Vector {
-        return new Vector( this.x + v.x , this.y + v.y );
+    add( v : Vector3 ) : Vector3 {
+        return new Vector3( this.x + v.x , this.y + v.y );
     }
 
-    sub( v : Vector ) : Vector {
-        return new Vector( this.x - v.x , this.y - v.y );
+    sub( v : Vector3 ) : Vector3 {
+        return new Vector3( this.x - v.x , this.y - v.y );
     }
 
     /**
@@ -93,52 +99,52 @@ class Vector{
      * 2 , 5 , 8
      */
     // TODO : vector is 2-d , the 3rd row should be 1;
-    applyTransform( mat : Matrix  ) : Vector {
+    applyTransform( mat : Matrix3  ) : Vector3 {
         let v0 = mat.data[0] * this.x + mat.data[3] * this.y + mat.data[6] * 1;
         let v1 = mat.data[1] * this.x + mat.data[4] * this.y + mat.data[7] * 1;
         // let v3 = mat.data[2] * this.x + mat.data[5] * this.y + mat.data[8] * 1; 
 
-        return new Vector(v0,v1);
+        return new Vector3(v0,v1);
 
     }
 
-    scale( factor : number ) : Vector {
-        return new Vector( this.x * factor , this.y * factor );
+    scale( factor : number ) : Vector3 {
+        return new Vector3( this.x * factor , this.y * factor );
     }
 
-    reverse() : Vector {
+    reverse() : Vector3 {
         return this.scale( -1 );
     }
 
-    perpendicular() : Vector {
-        return new Vector( this.y , this.x );
+    perpendicular() : Vector3 {
+        return new Vector3( this.y , this.x );
     }
 
-    dot( v : Vector ) : number {
+    dot( v : Vector3 ) : number {
         return this.x * v.x + this.y * v.y;
     }
 
-    clone() : Vector {
-        return new Vector(this.x , this.y);
+    clone() : Vector3 {
+        return new Vector3(this.x , this.y);
     }
 
     toString( ) : string {
         return `{ x: ${ this.x } , y: ${ this.y } }`
     }
 
-    static Addition( v0 : Vector , v1 :Vector) : Vector { 
+    static Addition( v0 : Vector3 , v1 :Vector3) : Vector3 { 
         return v0.add(v1);
     }
 
-    static Substraction( v0 : Vector , v1 : Vector ) : Vector {
+    static Substraction( v0 : Vector3 , v1 : Vector3 ) : Vector3 {
         return v0.sub( v1 );
     }
 
-    static SquaDist(v0 : Vector , v1 : Vector ) : number {
+    static SquaDist(v0 : Vector3 , v1 : Vector3 ) : number {
         return v1.sub(v0).squareLength();
     }
 
-    static Dist(v0 : Vector , v1 : Vector ) : number {
+    static Dist(v0 : Vector3 , v1 : Vector3 ) : number {
         return v1.sub(v0).length();
     }
 
@@ -147,30 +153,28 @@ class Vector{
      * v0 : x , y , 1
      * v1 : x , y , 1
      */
-    static Direction(v0 : Vector , v1 : Vector ) : number {
+    static Direction(v0 : Vector3 , v1 : Vector3 ) : number {
         // let x = v0.y - v1.y;
         // let y = v1.x - v0.x;
         let w = v0.x * v1.y - v0.y * v1.x;
         return w;
     }
 
-    static Equal( v0 : Vector , v1 : Vector ) : boolean {
+    static Equal( v0 : Vector3 , v1 : Vector3 ) : boolean {
         return ( v0.x == v1.x && v0.y == v1.y ) ;
     }
 
-    static GetNormal( v0 : Vector , v1 : Vector ) : Vector {
+    static GetNormal( v0 : Vector3 , v1 : Vector3 ) : Vector3 {
 
-        let normal : Vector = new Vector( v0.y - v1.y , v1.x - v0.x );
-
-        
+        let normal : Vector3 = new Vector3( v0.y - v1.y , v1.x - v0.x );
 
         return normal;
 
     }
 
-    static O : Vector = new Vector(0,0);
-    static X : Vector = new Vector(1,0);
-    static Y : Vector = new Vector(0,1);
+    static O : Vector3 = new Vector3(0,0);
+    static X : Vector3 = new Vector3(1,0);
+    static Y : Vector3 = new Vector3(0,1);
 
 }
 
@@ -180,216 +184,6 @@ class Vector{
  * | x1 , x4 , x7 |
  * | x2 , x5 , x8 |
  */
-class Matrix{
-    
-    public data : Array<number>;
-
-    constructor(
-            x0 = 1 , x1 = 0 , x2 = 0,
-            x3 = 0 , x4 = 1 , x5 = 0,
-            x6 = 0 , x7 = 0 , x8 = 1
-        ){
-        this.data = [x0,x1,x2,x3,x4,x5,x6,x7,x8];
-    }
-    // ele-wise add
-    add(mat : Matrix) : Matrix {
-        let data : Array<number> = [];
-
-        for(let i = 0 ; i < 9 ; ++ i){
-            data.push(this.data[i] + mat.data[i]);
-        }
-
-        return new Matrix( ...data );
-    }
-
-    // ele-wise sub
-    sub(mat : Matrix) : Matrix {
-        let data : Array<number> = [];
-
-        for(let i = 0 ; i < 9 ; ++ i){
-            data.push(this.data[i] - mat.data[i]);
-        }
-
-        return new Matrix( ...data );
-    }
-
-    // ele-wise mul
-    mul(mat : Matrix) : Matrix {
-        let data : Array<number> = [];
-
-        for(let i = 0 ; i < 9 ; ++ i){
-            data.push(this.data[i] * mat.data[i]);
-        }
-
-        return new Matrix( ...data );
-    }
-
-    // mat multiply by scalar
-    scalar( factor  : number) : Matrix {
-        let data : Array<number> = [];
-
-        for(let i = 0 ; i < 9 ; ++ i){
-            data.push(this.data[i] * factor );
-        }
-
-        return new Matrix( ...data );
-    }
-
-    transpose( ) : Matrix {
-        let data = this.data;
-        return new Matrix( data[0] , data[3] , data[6] , data[1] , data[4] , data[7] , data[2] , data[5] , data[8] );
-    }
-
-    // compute the determination of the matrix
-    // unfold the matrix according to the row
-    /**
-     * 0 , 3 , 6
-     * 1 , 4 , 7
-     * 2 , 5 , 8
-     */
-    det() : number{
-        let data = this.data;
-        let d0 = data[4] * data[8] - data[5] * data[7];
-        let d1 = data[1] * data[8] - data[2] * data[7];
-        let d2 = data[1] * data[5] - data[2] * data[4];
-
-        return data[0] * d0 - data[1] * d1 + data[2] * d2;
-    }
-
-    // A*
-    // compute the value by the row => place the value by the column 
-    /**
-     * 0 , 3 , 6
-     * 1 , 4 , 7
-     * 2 , 5 , 8
-     */
-    adjugate() : Matrix {
-        let data = this.data;
-
-        let x0 = data[4] * data[8] - data[5] * data[7];
-        let x1 = data[1] * data[8] - data[2] * data[7];
-        let x2 = data[1] * data[5] - data[2] * data[4];
-
-        let x3 = data[3] * data[8] - data[5] * data[6];
-        let x4 = data[0] * data[8] - data[2] * data[6];
-        let x5 = data[0] * data[5] - data[2] * data[3];
-
-        let x6 = data[3] * data[7] - data[4] * data[6];
-        let x7 = data[0] * data[7] - data[1] * data[6];
-        let x8 = data[0] * data[4] - data[1] * data[3];
-
-        return new Matrix( x0 , -x1 , x2 , -x3 , x4 , -x5 , x6 , -x7 , x8 );
-    }
-
-    // compute the inverse of the matrix
-    /**
-     * 0 , 3 , 6
-     * 1 , 4 , 7
-     * 2 , 5 , 8
-     */
-    inverse() : Matrix {
-        let d = this.det();
-
-        if( d == 0 ) throw new Error(' this matrix is not reversible');
-
-        let A = this.adjugate();
-        return A.scalar( 1 / d );
-    }
-
-    // clone the matrix
-    clone() : Matrix {
-        return new Matrix( ...this.data );
-    }
 
 
-    /**
-     * 0 , 3 , 6
-     * 1 , 4 , 7
-     * 2 , 5 , 8
-     */
-    static Multiply( mat1 : Matrix , mat2 : Matrix ) : Matrix {
-        let data : Array<number> = []
-        // plain matrix multiplication 
-        for(let i = 0 ; i < 3 ; ++ i){ // row
-            for(let j = 0 ; j < 3 ; ++ j){ // col
-                let d = 0
-                for(let k = 0 ; k < 3 ; ++ k){ // ele
-                    d += mat1.data[k * 3 + j] * mat2.data[i * 3 + k]
-                }
-                data.push(d);
-            }
-        }
-        
-        return new Matrix(...data);
-    }
-
-    /**
-     * 0 , 3 , 6(x)
-     * 1 , 4 , 7(y)
-     * 2 , 5 , 8
-     */
-    static Translate( mat : Matrix , t : Vector ) : Matrix {
-        let res = mat.clone()
-        let data = res.data;
-
-        data[6] += t.x;
-        data[7] += t.y;
-
-        return res;
-    }
-
-    /**
-     * 0(c)  , 3(-s) , 6
-     * 1(s)  , 4(c)  , 7
-     * 2     , 5     , 8
-     */
-    static Rotate( mat : Matrix , a : number ) : Matrix {
-        let res = mat.clone();
-        let rotationMatrix = new Matrix( cos(a) , sin(a) , 0 , -sin(a) , cos(a) , 0 );
-        res = Matrix.Multiply(rotationMatrix , res);
-
-        return res;
-    }
-
-    /**
-     * 0(x) , 3 , 6
-     * 1 , 4(y) , 7
-     * 2 , 5 , 8
-     */
-    static Scale( mat : Matrix , s : Vector) : Matrix {
-        let res = mat.clone();
-
-        res.data[0] *= s.x;
-        res.data[3] *= s.x;
-        res.data[6] *= s.x;
-
-        res.data[1] *= s.y;
-        res.data[4] *= s.y;
-        res.data[7] *= s.y;
-
-        return res;
-    }
-
-    static LinearTransform( mat : Matrix ) : Matrix {
-        let d0 = mat.data[0] , d1 = mat.data[1] , d3 = mat.data[3] , d4 = mat.data[4];3
-        return new Matrix( d0 , d1 , 0 , d3 , d4 , 0 , 0 , 0 , 1 );
-    }
-
-    static Equal( mat0 : Matrix , mat1 : Matrix ) : boolean {
-        for( let i = 0 ; i < 9 ; ++ i ){
-            if( mat0.data[i] != mat1.data[i] ) return false;
-        }
-        return true;
-    }
-
-    static TransformSequence( mat : Matrix , seq : Array< Vector > ) : Array< Vector > {
-        let result : Array<Vector> = new Array<Vector>;
-        for( let i = 0 ; i < seq.length ; ++ i ){
-            result.push( seq.at( i ).applyTransform( mat ) );
-        }
-        return result;
-    }
-
-}
-
-export {Complex , Vector , Matrix}
+export {Complex , Vector3 }

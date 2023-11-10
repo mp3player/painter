@@ -1,9 +1,10 @@
 import { ArrayList } from "./collection.js";
 import { BorderBox, Tool } from "./util.js";
-import { Matrix, Vector } from "./vector.js";
+import { Vector3 } from "./vector.js";
 import { Style } from './style.js'
 import { EventListener } from "./event.js";
 import { BoxComponent, Component, TransformComponent } from './component.js'
+import { Matrix3 } from "./matrix.js";
 
 enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT };
 
@@ -13,28 +14,28 @@ class Shape {
 
     constructor(){ }
 
-    getPoints() : Array< Vector > {
-        return new Array< Vector > ();
+    getPoints() : Array< Vector3 > {
+        return new Array< Vector3 > ();
     };
 
 }
 
 class Path extends Shape {
 
-    public points : Array<Vector>;
+    public points : Array<Vector3>;
 
     public get shapeType() { return ShapeType.PATH; }
 
     constructor( ){
         super();
-        this.points = new Array<Vector>();
+        this.points = new Array<Vector3>();
     }
 
-    append( point : Vector ){
+    append( point : Vector3 ){
         this.points.push( point );
     }
 
-    getPoints() : Array< Vector > {
+    getPoints() : Array< Vector3 > {
         return this.points;
     };
 
@@ -60,17 +61,17 @@ class Arc extends Shape {
         
     }
 
-    getPoints() : Array< Vector > {
+    getPoints() : Array< Vector3 > {
         
         // TODO : step should be calculated according the radius and the transform matrix
         let step : number = Math.floor( Math.PI * this.radius / 4 );
         let stride : number = ( this.endAngle - this.startAngle ) / step;
-        let points : Array< Vector > = new Array< Vector >();
+        let points : Array< Vector3 > = new Array< Vector3 >();
 
         for( let i = 0 ; i < step ; ++ i ){
             let x : number = Math.cos( i * stride ) * this.radius;
             let y : number = Math.sin( i * stride ) * this.radius;
-            points.push( new Vector( x , y ) );
+            points.push( new Vector3( x , y ) );
         }
         
         return points;
@@ -102,14 +103,14 @@ class Ellipse extends Shape {
         this.b = b;
     }
 
-    getPoints() : Array< Vector > {
-        let mat : Matrix = new Matrix( this.a , 0, 0, 0, this.b, 0, 0, 0, 1 );
+    getPoints() : Array< Vector3 > {
+        let mat : Matrix3 = new Matrix3( this.a , 0, 0, 0, this.b, 0, 0, 0, 1 );
         let step : number = Math.floor( Math.PI * 2 * Math.sqrt( this.a * this.b ) );
         let stride : number = Math.PI * 2 / step;
-        let edge : Array< Vector > = new Array< Vector >;
+        let edge : Array< Vector3 > = new Array< Vector3 >;
 
         for( let i = 0 ; i < step ; ++i ){
-            edge.push( new Vector( Math.cos( i * stride ) , Math.sin( i * stride ) ).applyTransform( mat ) );
+            edge.push( new Vector3( Math.cos( i * stride ) , Math.sin( i * stride ) ).applyTransform( mat ) );
         }
 
         return edge;
@@ -131,16 +132,16 @@ class Rectangle extends Shape{
         this.height = height;
     }
 
-    getPoints() : Array< Vector > {
+    getPoints() : Array< Vector3 > {
         
         let hw : number = this.width / 2;
         let hh : number = this.height / 2;
         
         return [
-            new Vector( -hw , -hh ),
-            new Vector(  hw , -hh ),
-            new Vector(  hw ,  hh ),
-            new Vector( -hw ,  hh ),
+            new Vector3( -hw , -hh ),
+            new Vector3(  hw , -hh ),
+            new Vector3(  hw ,  hh ),
+            new Vector3( -hw ,  hh ),
         ];
 
     };
@@ -149,22 +150,22 @@ class Rectangle extends Shape{
 
 class Polygon extends Shape{
     
-    public points : Array<Vector>;
+    public points : Array<Vector3>;
 
     public get shapeType() { return ShapeType.POLYGON; }
 
-    constructor( points : Array<Vector>){
+    constructor( points : Array<Vector3>){
         super();
         this.points = points;
     }
 
-    append( vertex : Vector ){
+    append( vertex : Vector3 ){
 
         this.points.push( vertex );
 
     }
 
-    getPoints() : Array< Vector > {
+    getPoints() : Array< Vector3 > {
         return this.points;
     };
 
@@ -173,7 +174,7 @@ class Polygon extends Shape{
 
 class Convex extends Polygon{
 
-    constructor( points : Array<Vector> ){
+    constructor( points : Array<Vector3> ){
         points = Tool.GetConvex( points );
         super( points );
     }
@@ -183,19 +184,19 @@ class Convex extends Polygon{
 
 class QuadraticBezierCurve extends Path{
 
-    public p0 : Vector;
-    public p1 : Vector;
-    public p2 : Vector;
+    public p0 : Vector3;
+    public p1 : Vector3;
+    public p2 : Vector3;
 
-    constructor( p0 : Vector , p1 : Vector , p2 : Vector ){
+    constructor( p0 : Vector3 , p1 : Vector3 , p2 : Vector3 ){
         super();
         this.p0 = p0 ;
         this.p1 = p1 ;
         this.p2 = p2 ;
     }
 
-    getPoints() : Array< Vector > {
-        return new Array< Vector > ();
+    getPoints() : Array< Vector3 > {
+        return new Array< Vector3 > ();
     };
 
 

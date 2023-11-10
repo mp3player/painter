@@ -1,5 +1,5 @@
 import { Stack } from "./collection.js";
-import { Complex , Vector } from "./vector.js";
+import { Complex , Vector3 } from "./vector.js";
 
 const _lut = ["00","01","02","03","04","05","06","07","08","09","0a","0b","0c","0d","0e","0f","10","11","12","13","14","15","16","17","18","19","1a","1b","1c","1d","1e","1f","20","21","22","23","24","25","26","27","28","29","2a","2b","2c","2d","2e","2f","30","31","32","33","34","35","36","37","38","39","3a","3b","3c","3d","3e","3f","40","41","42","43","44","45","46","47","48","49","4a","4b","4c","4d","4e","4f","50","51","52","53","54","55","56","57","58","59","5a","5b","5c","5d","5e","5f","60","61","62","63","64","65","66","67","68","69","6a","6b","6c","6d","6e","6f","70","71","72","73","74","75","76","77","78","79","7a","7b","7c","7d","7e","7f","80","81","82","83","84","85","86","87","88","89","8a","8b","8c","8d","8e","8f","90","91","92","93","94","95","96","97","98","99","9a","9b","9c","9d","9e","9f","a0","a1","a2","a3","a4","a5","a6","a7","a8","a9","aa","ab","ac","ad","ae","af","b0","b1","b2","b3","b4","b5","b6","b7","b8","b9","ba","bb","bc","bd","be","bf","c0","c1","c2","c3","c4","c5","c6","c7","c8","c9","ca","cb","cc","cd","ce","cf","d0","d1","d2","d3","d4","d5","d6","d7","d8","d9","da","db","dc","dd","de","df","e0","e1","e2","e3","e4","e5","e6","e7","e8","e9","ea","eb","ec","ed","ee","ef","f0","f1","f2","f3","f4","f5","f6","f7","f8","f9","fa","fb","fc","fd","fe","ff"]
 
@@ -22,12 +22,12 @@ class Tool{
         return uuid.toUpperCase();
     }
 
-    static getSlop( v0 : Vector , v1 : Vector ) : number {
+    static getSlop( v0 : Vector3 , v1 : Vector3 ) : number {
         if( v0.x == v1.x ) return Number.POSITIVE_INFINITY;
         return ( v1.y - v0.y ) / ( v1.x - v0.x );
     }
 
-    static isLineIntersected( p0 : Vector , p1 : Vector , p2 : Vector , p3 : Vector  ) : boolean {
+    static isLineIntersected( p0 : Vector3 , p1 :Vector3 , p2 : Vector3 , p3 : Vector3  ) : boolean {
 
         // l0 => p0 : upper , p1 : lower
         // l1 => p2 : upper , p3 : lower
@@ -37,10 +37,10 @@ class Tool{
         let v2 = p3.sub(p0)//( l1->lower - l0->upper , 1.0f );
         let v3 = p1.sub(p3)//( l0->lower - l1->lower , 1.0f );
     
-        let c0z : number = Vector.Direction(v0,v1);
-        let c1z : number = Vector.Direction(v1,v2);
-        let c2z : number = Vector.Direction(v2,v3);
-        let c3z : number = Vector.Direction(v3,v0);
+        let c0z : number = Vector3.Direction(v0,v1);
+        let c1z : number = Vector3.Direction(v1,v2);
+        let c2z : number = Vector3.Direction(v2,v3);
+        let c3z : number = Vector3.Direction(v3,v0);
     
         if( c0z > 0 && c1z > 0 && c2z > 0 && c3z > 0 || c0z < 0 && c1z < 0 && c2z < 0 && c3z < 0 ){
             return true;
@@ -48,20 +48,20 @@ class Tool{
         return false;
     }
 
-    static IsPointInCircle( center : Vector , radius : number  , point : Vector ) : boolean {
+    static IsPointInCircle( center : Vector3 , radius : number  , point : Vector3 ) : boolean {
 
-        let dis = Vector.SquaDist(center , point);
+        let dis = Vector3.SquaDist(center , point);
         if(dis > radius * radius)
             return false;
         return true;
 
     }
 
-    static IsPoingInEllipse( a : number , b : number , point : Vector ) : boolean {
+    static IsPoingInEllipse( a : number , b : number , point : Vector3 ) : boolean {
         return false;
     }
 
-    static isPointInLine( p0 : Vector , p1 : Vector , point : Vector , eps = 1.0 ) : boolean {
+    static isPointInLine( p0 : Vector3 , p1 : Vector3 , point : Vector3 , eps = 1.0 ) : boolean {
 
         if( p0.x == p1.x ){
             // vertical line
@@ -86,14 +86,14 @@ class Tool{
 
     }
 
-    static isPointInPath( edge : Array< Vector > , point : Vector , eps = 1.0) : boolean {
+    static isPointInPath( edge : Array< Vector3 > , point : Vector3 , eps = 1.0) : boolean {
         for( let i = 1 ; i < edge.length ; ++i ){
             if( this.isPointInLine( edge[ i - 1 ] , edge[i] , point , eps ) ) return true;
         }
         return false;
     }
 
-    static IsPointInRect( edge : Array<Vector> , point : Vector ) : boolean {
+    static IsPointInRect( edge : Array<Vector3> , point : Vector3 ) : boolean {
 
         let left = edge[0].x , right = edge[0].x , top = edge[0].y , bottom = edge[0].y;
         for( let i = 1 ; i < edge.length ; ++ i ){
@@ -109,7 +109,7 @@ class Tool{
         return ( point.x >= left && point.x <= right && point.y >= bottom && point.y <= top)
     }
 
-    static IsPointInPolygon( edge : Array<Vector> , point : Vector  ) : boolean {
+    static IsPointInPolygon( edge : Array<Vector3> , point : Vector3  ) : boolean {
 
         let count = edge.length;
         let flag = false;
@@ -139,7 +139,7 @@ class Tool{
         return flag;
     }
 
-    static GetConvex( edge : Array<Vector> ) : Array<Vector> {
+    static GetConvex( edge : Array<Vector3> ) : Array<Vector3> {
         // 1、find the border point
         let bottom = edge[0]
         for( let i = 0 ; i < edge.length ; ++i ){
@@ -149,10 +149,10 @@ class Tool{
         
         interface PointCache {
             cos : number , 
-            vec : Vector 
+            vec : Vector3 
         };
 
-        let e1 = new Vector(1,0);
+        let e1 = new Vector3(1,0);
         let angles:Array<PointCache> = []
 
         let insert = (obj : PointCache) => {
@@ -193,7 +193,7 @@ class Tool{
 
 
         // check if the point should be pushed into the stack 
-        let push = (stack : Stack<any> , vec : Vector ) => {
+        let push = (stack : Stack<any> , vec : Vector3 ) => {
             if(stack.length < 2){
                 stack.push(vec);
                 return ;
@@ -204,7 +204,7 @@ class Tool{
             stack.pop();
             let v = p0.sub(p1);
             let v1 = vec.sub(p0)
-            let z = Vector.Direction(v,v1);
+            let z = Vector3.Direction(v,v1);
             if(z > 0){
                 stack.push(p1)
                 stack.push(p0)
@@ -222,9 +222,9 @@ class Tool{
         return stack.data;
     }
 
-    static Minkowski( conv1 : Array<Vector>  , conv2 : Array<Vector> , mode = 'diff' ) : Array<Vector>{
+    static Minkowski( conv1 : Array<Vector3>  , conv2 : Array<Vector3> , mode = 'diff' ) : Array<Vector3>{
         
-        let shape : Array<Vector> = [];
+        let shape : Array<Vector3> = [];
         for(let i = 0 ; i < conv1.length ; ++ i){
             for(let j = 0 ; j < conv2.length ; ++ j){
                 if(mode == 'diff'){
@@ -242,11 +242,11 @@ class Tool{
     }
 
     
-    static LinearInterpolate( p0 : Vector , p1 : Vector , w = 0) : Vector {
+    static LinearInterpolate( p0 : Vector3 , p1 : Vector3 , w = 0) : Vector3 {
         let dx = p1.x - p0.x;
         let dy = p1.y - p0.y;
 
-        return new Vector(p0.x + dx * w , p0.y + dy * w);
+        return new Vector3(p0.x + dx * w , p0.y + dy * w);
     }
 
     static getObjectType( object : Object ) : string {
@@ -403,10 +403,10 @@ class Tool{
 
 class Ray {
 
-    private origin : Vector;
-    private direction : Vector;
+    private origin : Vector3;
+    private direction : Vector3;
 
-    constructor( origin : Vector  , direction : Vector ){
+    constructor( origin : Vector3  , direction : Vector3 ){
         this.origin = origin;
         this.direction = direction;
     }
@@ -428,7 +428,7 @@ class BorderBox{
     }
 
     // point + box
-    merge( point : Vector ) : void {
+    merge( point : Vector3 ) : void {
         
         let top : number = this.top , 
         right : number = this.right , 
@@ -474,12 +474,12 @@ class BorderBox{
         if( left < this.left ) this.left = left;
     }
 
-    getBorder() : Array< Vector > {
+    getBorder() : Array< Vector3 > {
         return [ 
-            new Vector( this.left , this.top ) , 
-            new Vector( this.left , this.bottom ) , 
-            new Vector( this.right , this.bottom ) , 
-            new Vector( this.right , this.top ) 
+            new Vector3( this.left , this.top ) , 
+            new Vector3( this.left , this.bottom ) , 
+            new Vector3( this.right , this.bottom ) , 
+            new Vector3( this.right , this.top ) 
         ];
     }
 
@@ -511,22 +511,22 @@ class BorderBox{
 
 class BorderCircle {
 
-    public center : Vector;
+    public center : Vector3;
     public r : number;
 
-    constructor( center : Vector , r : number ){
+    constructor( center : Vector3 , r : number ){
         this.center = center;
         this.r = r;
     }
 
-    getBorder() : Array< Vector > {
-        let edge : Array < Vector > = [];
+    getBorder() : Array< Vector3 > {
+        let edge : Array < Vector3 > = [];
 
         let step : number = Math.ceil( Math.PI * 2 * this.r );
         let stride : number = Math.PI * 2 / step;
 
         for( let i = 0 ; i < step ; ++ i ){
-            edge.push( new Vector( Math.cos( i * stride ) , Math.sin( i * stride ) ).scale( this.r ).add( this.center ) );
+            edge.push( new Vector3( Math.cos( i * stride ) , Math.sin( i * stride ) ).scale( this.r ).add( this.center ) );
         }
 
         return edge;

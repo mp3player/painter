@@ -1,6 +1,6 @@
 import { Painter } from "./painter.js";
 import { SystemBase } from "./system.js";
-import { Vector } from "./vector.js";
+import { Vector3 } from "./vector.js";
 
 class EventType { 
 
@@ -35,8 +35,8 @@ abstract class ActiveEvent {
 class MouseActiveEvent extends ActiveEvent{
 
     private _name : EventType;               // the name  
-    private _painterLocation : Vector;
-    private _screenLocation : Vector ;
+    private _painterLocation : Vector3;
+    private _screenLocation : Vector3 ;
     public paths : Array< EventListener >
 
     public get name(){
@@ -58,12 +58,12 @@ class MouseActiveEvent extends ActiveEvent{
     constructor(
         event : MouseEvent | null ,
         name = EventType.UNKNOW , 
-        location : Vector
+        location : Vector3
     ){
         super( event )
         this._name = name ;
         this._painterLocation = location.clone();
-        this._screenLocation = new Vector( event.x , event.y );
+        this._screenLocation = new Vector3( event.x , event.y );
         this.paths = [];
     }
 

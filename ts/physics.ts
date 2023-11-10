@@ -1,11 +1,11 @@
 import { Component } from "./component.js";
 import { SystemBase } from "./system.js";
-import { Vector } from "./vector.js";
+import { Vector3 } from "./vector.js";
 
 
 class RigidComponent extends Component{
 
-    private force : Vector ;
+    private force : Vector3 ;
     private smoothness : number ;
     private mass : number;
     
@@ -15,12 +15,12 @@ class RigidComponent extends Component{
         super( name )
     }
 
-    public addForce( force : Vector ) : void {
+    public addForce( force : Vector3 ) : void {
         this.force = force;
     }
 
     public reset() : void {
-        this.force = new Vector();
+        this.force = new Vector3();
     }
 
     public update( deltaTime: number ): void {

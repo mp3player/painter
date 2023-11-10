@@ -2,27 +2,28 @@ import { Buffer } from "./buffer.js";
 import { ArrayList, PriorityQueue } from "./collection.js";
 import { BoxComponent, CircleComponent, Component, ShapeComponent, TransformComponent } from "./component.js";
 import { Entity } from "./entity.js";
+import { Matrix3 } from "./matrix.js";
 import { Painter } from "./painter.js";
 import { Path, Shape } from "./shape.js";
 import { Color, Style } from "./style.js";
 import { SystemBase } from "./system.js";
-import { BorderBox, BorderCircle } from "./util.js";
-import { Matrix, Vector } from "./vector.js";
+import {  Vector3 } from "./vector.js";
+
 
 
 class RenderBuffer extends Buffer {
 
-    private data : Array< Vector >
+    private data : Array< Vector3 >
     private path : Path2D;
     private ref : Entity
     
-    public constructor( data : Array< Vector > , ref : Entity ){
+    public constructor( data : Array< Vector3 > , ref : Entity ){
         super()
         this.data = data;
         this.ref = ref;
     }
 
-    getData() : Array< Vector > {
+    getData() : Array< Vector3 > {
         return this.data;
     }
 
@@ -139,9 +140,9 @@ class CanvasRenderSystem extends RenderSystem {
         this.canvas.width = width;
         this.canvas.height = height;
 
-        let transform : Matrix = new Matrix;
-        transform = Matrix.Scale(transform , new Vector(1,-1));
-        transform = Matrix.Translate(transform , new Vector(this.width / 2 , this.height / 2));
+        let transform : Matrix3 = new Matrix3;
+        transform = Matrix3.Scale(transform , new Vector3(1,-1));
+        transform = Matrix3.Translate(transform , new Vector3(this.width / 2 , this.height / 2));
 
         let data = transform.data;
 
@@ -158,11 +159,11 @@ class CanvasRenderSystem extends RenderSystem {
         this.beginFill( renderComponent.style.background );
 
         this.beginPath( Color.Black );
-        this.moveTo( new Vector( -this.width / 2 , this.height / 2) );
+        this.moveTo( new Vector3( -this.width / 2 , this.height / 2) );
 
-        this.lineTo( new Vector( this.width / 2 , this.height / 2) )
-        this.lineTo( new Vector( this.width / 2 , -this.height / 2) )
-        this.lineTo( new Vector( -this.width / 2 , -this.height / 2) )
+        this.lineTo( new Vector3( this.width / 2 , this.height / 2) )
+        this.lineTo( new Vector3( this.width / 2 , -this.height / 2) )
+        this.lineTo( new Vector3( -this.width / 2 , -this.height / 2) )
 
         this.closePath();
 
@@ -184,11 +185,11 @@ class CanvasRenderSystem extends RenderSystem {
 
     }
 
-    private moveTo( point : Vector ) : void {
+    private moveTo( point : Vector3 ) : void {
         this.pen.moveTo( point.x , point.y );
     }
 
-    private lineTo( point : Vector ) : void {
+    private lineTo( point : Vector3 ) : void {
         this.pen.lineTo( point.x , point.y );
     }
 
@@ -209,7 +210,7 @@ class CanvasRenderSystem extends RenderSystem {
         this.pen.closePath();
     }
 
-    private bufferPath( edge : Array< Vector > ){
+    private bufferPath( edge : Array< Vector3 > ){
 
         if( edge.length <= 0 ) return ;
 
@@ -239,7 +240,7 @@ class CanvasRenderSystem extends RenderSystem {
         this.restore();
     }
 
-    private fillShape( edge : Array< Vector > , renderComponent : Renderer  ) : void {
+    private fillShape( edge : Array< Vector3 > , renderComponent : Renderer  ) : void {
 
   
         if( edge.length <= 0 ) return ;
@@ -261,7 +262,7 @@ class CanvasRenderSystem extends RenderSystem {
     private strokeShape( buffer : RenderBuffer , renderComponent : Renderer ) : void {
 
         if( buffer.getData().length <= 0 ) return ;
-        let edge : Array< Vector > = buffer.getData();
+        let edge : Array< Vector3 > = buffer.getData();
 
         this.sandboxRender( ( ) => {
             this.save();
@@ -311,7 +312,7 @@ class CanvasRenderSystem extends RenderSystem {
 
             if( !this.renderBuffer.has( node.uuid ) || node.findComponent('transform').hasUpdated ){
 
-                buffer = new RenderBuffer( Matrix.TransformSequence( transformComponent.transformShapeWorld, points ) , node );
+                buffer = new RenderBuffer( Matrix3.TransformSequence( transformComponent.transformShapeWorld, points ) , node );
                 this.renderBuffer.set( node.uuid , buffer );
 
             }else{

@@ -1,8 +1,9 @@
 import { Entity } from './entity.js';
+import { Matrix3 } from './matrix.js';
 import { Circle, Shape } from './shape.js'
 import { Style } from './style.js';
 import { BorderBox, BorderCircle } from './util.js';
-import { Matrix, Vector } from './vector.js';
+import { Vector3 } from './vector.js';
 
 
 abstract class Component {
@@ -34,7 +35,7 @@ abstract class Component {
 class ShapeComponent extends Component {
 
     public shape : Shape;
-    private points : Array< Vector > = new Array< Vector >; 
+    private points : Array< Vector3 > = new Array< Vector3 >; 
     public hasUpdated : boolean = true;
 
     public constructor( shape : Shape , name : string = "shape" ){
@@ -54,7 +55,7 @@ class ShapeComponent extends Component {
 
     }
 
-    public getPoints() : Array< Vector > {
+    public getPoints() : Array< Vector3 > {
 
         return this.shape.getPoints();
 
@@ -65,17 +66,17 @@ class ShapeComponent extends Component {
 class TransformComponent extends Component {
 
     public rotation : number = 0.0;
-    public scale : Vector = new Vector( 1.0 , 1.0 );
-    public center : Vector = new Vector( 0.0 , 0.0 );
+    public scale : Vector3 = new Vector3( 1.0 , 1.0 );
+    public center : Vector3 = new Vector3( 0.0 , 0.0 );
 
-    public transformShape : Matrix = new Matrix;
-    public inverseTransformShape : Matrix = new Matrix;
+    public transformShape : Matrix3 = new Matrix3;
+    public inverseTransformShape : Matrix3 = new Matrix3;
 
-    public transformWorld : Matrix = new Matrix;
-    public inverseTransformWorld : Matrix = new Matrix;
+    public transformWorld : Matrix3 = new Matrix3;
+    public inverseTransformWorld : Matrix3 = new Matrix3;
 
-    public transformShapeWorld : Matrix = new Matrix;
-    public inverseTransformShapeWorld : Matrix = new Matrix;
+    public transformShapeWorld : Matrix3 = new Matrix3;
+    public inverseTransformShapeWorld : Matrix3 = new Matrix3;
 
     private transformShapeNeedUpdate : boolean = true ;
     private transformWorldNeedUpdate : boolean = true;
@@ -112,10 +113,10 @@ class TransformComponent extends Component {
     // Local Transform
     private updateTransformShape() : void {
 
-        this.transformShape = new Matrix();
-        this.transformShape = Matrix.Rotate(this.transformShape , this.rotation);
-        this.transformShape = Matrix.Scale(this.transformShape , this.scale);
-        this.transformShape = Matrix.Translate( this.transformShape , this.center );
+        this.transformShape = new Matrix3();
+        this.transformShape = Matrix3.Rotate(this.transformShape , this.rotation);
+        this.transformShape = Matrix3.Scale(this.transformShape , this.scale);
+        this.transformShape = Matrix3.Translate( this.transformShape , this.center );
 
         this.inverseTransformShape = this.transformShape.inverse();
         
@@ -143,7 +144,7 @@ class TransformComponent extends Component {
     // World Transform
     public updateTransformShapeWorld( ) : void {
 
-        this.transformShapeWorld = Matrix.Multiply( this.transformWorld , this.transformShape );
+        this.transformShapeWorld = Matrix3.Multiply( this.transformWorld , this.transformShape );
         this.inverseTransformShapeWorld = this.transformShapeWorld.inverse();
 
     }
@@ -158,7 +159,7 @@ class TransformComponent extends Component {
 
     public setTranslation( x : number , y : number ) : void { 
         if( this.center.x != x || this.center.y != y ){
-            this.center = new Vector( x , y ); 
+            this.center = new Vector3( x , y ); 
             this.transformShapeNeedUpdate = true; 
         }
          
@@ -166,7 +167,7 @@ class TransformComponent extends Component {
 
     public setScale( x : number , y : number ) : void { 
         if( this.scale.x != x || this.scale.y != y ){
-            this.scale = new Vector( x , y ); 
+            this.scale = new Vector3( x , y ); 
             this.transformShapeNeedUpdate = true; 
         }  
     }
@@ -179,9 +180,9 @@ class TransformComponent extends Component {
         
     }
 
-    public translate( translation : Vector ) : void { 
+    public translate( translation : Vector3 ) : void { 
         if( translation.x != 0 || translation.y != 0 ){
-            this.center = Vector.Addition( this.center , translation );
+            this.center = Vector3.Addition( this.center , translation );
             this.transformShapeNeedUpdate = true; 
         }
         
@@ -192,7 +193,7 @@ class TransformComponent extends Component {
 class BoxComponent extends Component {
 
     public borderBox : BorderBox;
-    public transform : Matrix;
+    public transform : Matrix3;
     public visible : boolean = true;
     public dash : number = 4;
 
@@ -212,7 +213,7 @@ class BoxComponent extends Component {
         let shapeComponent : ShapeComponent = this.entity.findComponent('shape');
 
         // recompute the border
-        let points : Array< Vector > = shapeComponent.getPoints();
+        let points : Array< Vector3 > = shapeComponent.getPoints();
 
         this.borderBox.reset();
         for( let i = 0 ; i < points.length ; ++ i ){
@@ -240,7 +241,7 @@ class CircleComponent extends BoxComponent {
 
         let radius = this.borderBox.right - this.borderBox.left;
         if( this.borderBox.top - this.borderBox.bottom > radius ) radius = this.borderBox.top - this.borderBox.bottom;
-        let center = new Vector( ( this.borderBox.left + this.borderBox.right ) / 2 , ( this.borderBox.top + this.borderBox.bottom ) / 2 );
+        let center = new Vector3( ( this.borderBox.left + this.borderBox.right ) / 2 , ( this.borderBox.top + this.borderBox.bottom ) / 2 );
         this.borderCircle = new BorderCircle( center , radius / 2 );
 
     }

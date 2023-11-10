@@ -19,6 +19,7 @@
         "ts/style.ts",
         "ts/util.ts",
         "ts/vector.ts",
+        "ts/matrix.ts",
         "ts/pdf.ts",
         "ts/jpeg.ts",
         "ts/application.ts",

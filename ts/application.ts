@@ -2,7 +2,7 @@ import { Timer } from './timer.js'
 import { Painter } from './painter.js'
 import { Circle , Rectangle , Polygon , Ellipse , Path , Text } from './shape.js';
 import { Color } from './style.js';
-import { Vector } from './vector.js';
+import { Vector3 } from './vector.js';
 import { ActiveEvent , EventSystem, MouseActiveEvent } from './event.js';
 import { TransformSystem } from './system.js';
 import { Entity } from './entity.js';
@@ -51,29 +51,28 @@ class Application {
 
         this.painter.add( Application.createCircle( 100 ) );
 
-        // this.painter.add( Application.createPolygon() );
+        
     
         ellipse = Application.createEllipse( 100 , 50 );
-        ellipse.transform.translate( new Vector( 100 , 200 ) );
+        ellipse.transform.translate( new Vector3( 100 , 200 ) );
         this.painter.add( ellipse );
 
         this.painter.add( Application.randomPath() );
 
         let vertexes = [ -114 ,309, -168 ,225, -130 ,164, -134 ,92, -180 ,124, -202 ,-16, -131 ,-109, -62 ,-58, 117 ,-181, 50 ,8, 188, -9, 257, 183, 113, 124, 121, 303, -5, 256]
-        
-        let poly = []
-
+        let poly : Array< Vector3 > = [];
         for( let i = 0 ; i < vertexes.length ; i += 2 ){
             let x = vertexes[i];
             let y = vertexes[i + 1];
-            poly.push( new Vector( x , y ) );
+            poly.push( new Vector3( x , y ) );
         }
 
-        let triangles = Geometry.triangulate( poly );
+        poly = Geometry.normalize( poly );
 
-        for( let triangle of triangles ){
-            this.painter.add( Application.createTriangle( triangle ) );
-        }
+        this.painter.add( Application.createPolygon( poly ) );
+
+
+
 
 
         // let str = `「如果尖銳的批評完全消失，溫和的批評將會變得刺耳。\n
@@ -89,6 +88,7 @@ class Application {
 
         // let ellipse = new Ellipse( 50 ,100 , 100 , 100 );
         // this.painter.add( ellipse );
+
     }
 
     appendTo( id : string | HTMLElement ) : void {
@@ -161,21 +161,9 @@ class Application {
 
     }
 
-    static createPolygon( ) : Entity {
+    static createPolygon( path : Array< Vector3 > ) : Entity {
         
-        let poly = new Polygon([]);
-
-        let vertexes = [ -114 ,309, -168 ,225, -130 ,164, -134 ,92, -180 ,124, -202 ,-16, -131 ,-109, -62 ,-58, 117 ,-181, 50 ,8, 188, -9, 257, 183, 113, 124, 121, 303, -5, 256]
-
-        for( let i = 0 ; i < vertexes.length ; i += 2 ){
-            let x = vertexes[i];
-            let y = vertexes[i + 1];
-            poly.append( new Vector( x , y ) );
-        }
-
-        console.log( poly.points )
-
-        Geometry.triangulate( poly.points );
+        let poly = new Polygon( path );
 
         let shapeComponent : ShapeComponent = new ShapeComponent( poly );
         let entity : Entity = new Entity();
@@ -191,7 +179,7 @@ class Application {
         for( let i = 0 ; i < 4 ; ++ i ){
             let x = ( Math.random() - .5 ) * innerWidth;
             let y = ( Math.random() - .5 ) * innerHeight;
-            poly.append( new Vector( x , y ) );
+            poly.append( new Vector3( x , y ) );
         }
 
         let shapeComponent : ShapeComponent = new ShapeComponent( poly );
@@ -201,15 +189,18 @@ class Application {
 
     }
     
-    static createTriangle( points : Array< Vector >){
+    static createTriangle( points : Array< Vector3 >){
 
         let poly = new Polygon( points );
 
         let shapeComponent : ShapeComponent = new ShapeComponent( poly );
+
         let entity : Entity = new Entity();
+
         entity.findComponent('renderer').style.background = Color.Red;
         entity.findComponent('renderer').style.color = Color.Blue;
         entity.addComponent( shapeComponent );
+
         return entity ;
 
     }
