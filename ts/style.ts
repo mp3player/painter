@@ -53,6 +53,7 @@ class Color{
     parse( color : string ) : Color {
         return new Color();
     }; 
+    
 
 }
 
@@ -111,6 +112,16 @@ class Style{
         this.closePath    = config.closePath;
     }
 
+    public toJson() : any {
+        return {
+            'lineWidth' : this.lineWidth,
+            'lineJoin' : this.lineJoin,
+            'lineCap' : this.lineCap,
+            'strokeStyle' : this.color,
+            'fillStyle' : this.background,
+            'globalAlpha' : this.opacity
+        }
+    }
     
 }
 

@@ -11,11 +11,10 @@
     },
     "files": [
         "ts/collection.ts",
-        "ts/event.ts",
+        "ts/system/event.ts",
         "ts/geometry.ts",
         "ts/noise.ts",
         "ts/painter.ts",
-        "ts/shape.ts",
         "ts/style.ts",
         "ts/util.ts",
         "ts/vector.ts",
@@ -25,11 +24,22 @@
         "ts/application.ts",
         "ts/timer.ts",
         "ts/animate.ts",
-        "ts/component.ts",
         "ts/entity.ts",
-        "ts/system.ts",
         "ts/buffer.ts",
-        "ts/physics.ts",
-        "ts/render.ts",
+        "ts/system/physics.ts",
+        "ts/math.ts",
+
+        "ts/component/component.ts",
+        "ts/component/render.ts",
+        "ts/component/shape.ts",
+        "ts/component/transform.ts",
+        "ts/component/box.ts",
+        "ts/component/circle.ts",
+        "ts/component/rigid.ts",
+        "ts/component/grid.ts",
+
+        "ts/system/system.ts",
+        "ts/system/render.ts",
+        "ts/system/transform.ts"
     ]
   }

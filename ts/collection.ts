@@ -49,10 +49,10 @@ abstract class List < T >{
     abstract insert( i : number , v : T ) : void
 
     // delete
-    abstract remove(i : number) : void
+    abstract remove(i : number) : T | null
 
     // get
-    abstract get(i : number) : void
+    abstract get(i : number) : T
 
     // set 
     abstract set(i : number , v : T) : void
@@ -116,15 +116,15 @@ class LinkedList<T> extends List<T>{
     }
 
     // implement List::delete
-    remove(i : number) : Node<T> | null {
+    remove(i : number) : T | null {
 
         if(i >= this._length)
             return null;
 
-        let node : any = this.get(i);
+        let node : Node<T> = this.get(i);
         if(node != null){
-            let prev : any = node.prev;
-            let next : any = node.next;
+            let prev : Node<T> = node.prev;
+            let next : Node<T> = node.next;
 
             if(prev != null)
                 prev.next = next;
@@ -136,7 +136,7 @@ class LinkedList<T> extends List<T>{
             return node.element;
         }
 
-        return node;
+        return node.element;
         
     }
 
@@ -193,7 +193,7 @@ class LinkedList<T> extends List<T>{
 
 class ArrayList<T> extends List<T>{
 
-    private data : Array<any>;
+    private data : Array<T>;
 
     constructor(){
         super();
@@ -201,32 +201,33 @@ class ArrayList<T> extends List<T>{
     }
     
     // add
-    add(v : any) : void {
+    add(v : T) : void {
         this.data.push(v);
         this._length += 1;
     }
 
-    insert(i: number, v: any): void {
+    insert(i: number, v: T): void {
         this.data.splice(i , 0 , v);
     }
 
     // delete
-    remove(i : number) : any {
+    remove(i : number) : T | null {
         if(i < this.length){
-            let v = this.data.splice(i,1);
+            let v : Array<T> = this.data.splice(i,1);
             this._length -= 1;
-            return v;
+            return v[0];
         }
+        return null;
     }
 
 
     // get
-    get(i : number) : any {
+    get(i : number) : T {
         return this.data[i];
     }
 
     // set 
-    set(i : number , v : any ) : void {
+    set(i : number , v : T ) : void {
         this.data[i] = v;
     }
 
@@ -309,7 +310,9 @@ class PriorityQueue<T> {
     private comparer : _Comp<T>
 
     public get length() {
+
         return this._length;
+
     }
 
     constructor( comparer : _Comp<T> = defaultComparer ){
@@ -386,6 +389,33 @@ class PriorityQueue<T> {
         let b = this.data.at( bIndex );
         this.data[aIndex] = b;
         this.data[bIndex] = a;
+    }
+
+    /**
+     * name
+     */
+    public getOrderedData( ) : Array< T >  {
+        
+        // copy data , 
+        let copiedData : Array< T > = [];
+        for( let i = 0 ; i < this.length ; ++ i ){
+            copiedData.push( this.data[i] );
+        }
+        // pop 
+        // reset data 
+
+        let result : Array< T > = [];
+
+        while( !this.isEmpty() ){
+            result.push( this.top() );
+            this.pop();
+        }
+
+        this.data = copiedData;
+        this._length = copiedData.length ;
+
+        return result ;
+
     }
 
 }

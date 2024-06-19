@@ -1,9 +1,17 @@
-import { Tool } from "./util.js";
+import { GMath } from "./math.js";
+import { Matrix3 } from "./matrix.js";
 import { Vector3 } from "./vector.js";
+
 
 
 class Geometry {
 
+    /**
+     * find a ear in a polygon
+     * @param edge vertex of the given polygon
+     * @param anti vertex order of the polygon : clock wise or anti-clock wise 
+     * @returns 
+     */
     static FindEar( edge : Array< Vector3 > , anti : boolean  ) : Array< number >{
         
         if( edge.length == 3 ) return [ 0 , 1 , 2 ];
@@ -29,7 +37,7 @@ class Geometry {
                     continue;
                 } 
                 
-                if( Tool.IsPointInPolygon( triangle , edge.at( j ) ) ){
+                if( GMath.IsPointInPolygon( triangle , edge.at( j ) ) ){
                     // this is not a ear
                     isEar = false;
                     break;
@@ -45,7 +53,12 @@ class Geometry {
 
     }
 
-    // two-ear implementation
+    /**
+     * triangulation algorithm implemented by ear algorithm
+     * @param path , point set need to be triangulate polygon
+     * @param anti , the same as the FindEar's anti parameter
+     * @returns 
+     */
     static Triangulate( path : Array< Vector3 > , anti = true ) : Array< Array< Vector3 > >{
 
         // clone 
@@ -70,124 +83,28 @@ class Geometry {
         
     }
 
+    /**
+     * GJK algorithm implementation
+     * @param poly0 
+     * @param poly1 
+     */
     static GJKDetection( poly0 : Array< Vector3 > , poly1 : Array< Vector3 > ){
+
         // 1.random direction
         // 2.compute furthest point => ensure direction
         // 3.compute normal
-        let direction : Vector3 = Vector3.X;
-        let simplex : Array< Vector3 > = [];
-        let initialSupportVector3 : Vector3 = Geometry.GetSupportVector3( direction , poly0 , poly1 );
-
-        simplex.push( initialSupportVector3 );
-        direction = Vector3.O.sub( initialSupportVector3 );
         
-        while( true ){
-
-            let supportVector3 : Vector3 = Geometry.GetSupportVector3( direction , poly0 , poly1 );
-            simplex.push( supportVector3 );
-
-            // whether the line is passing the origin 
-            // if no => return no intersection
-            // if yes => go on
-            if( direction.dot( supportVector3 ) < 0 ) return false;
-
-            if( simplex.length == 2 ){
-                
-                let normal = Geometry.GetNormalTowardOrigin( simplex[0] , simplex[1]  );
-                supportVector3 = Geometry.GetSupportVector3( normal , poly0 , poly1 );
-                
-                // whether the line is passing the origin 
-                // if no => return no intersection
-                // if ues => add to the simplex
-                
-                if( direction.dot( supportVector3 ) < 0 ) return false;
-
-                simplex.push( supportVector3 );
-
-            }else{
-                
-                // whether the triangle is passting the origin  
-                if( Tool.IsPointInPolygon( simplex , new Vector3 ) ){
-                    return true;
-                }
-
-                // if not , retain the edge nearest to the origin
-
-            }
-
-            break;
-        }
-        // 
 
     }
 
     /**
-     * This methods to get the points which is furthest to the polygon
-     * @param direction : vector 
-     * @param poly 
-     * @returns 
+     * 
+     * @param A is a point of a triangle
+     * @param B is a point of a triangle
+     * @param C is a point of a triangle
+     * @param P is a point represented by the a, b and c
+     * @returns the coordinate coefficient corresponding to the a, b and c
      */
-    static GetFurthestPoint( direction : Vector3 , poly : Array< Vector3 > ) : Vector3 {
-        
-        if( poly.length <= 0 ) return null;
-
-        let value : number = direction.dot( poly.at(0) );
-        let point = poly.at(0);
-
-        for( let i = 1 ; i < poly.length ; ++ i ){
-            let v = direction.dot( poly.at( i ) );
-            if( v > value ){
-                value = value;
-                point = poly.at( i );
-            }
-        }
-
-        return point;
-
-    }
-
-    static GetSupportVector3( direction : Vector3 , poly0 : Array< Vector3 > , poly1 : Array< Vector3 > ) : Vector3 {
-        
-        let fp0 : Vector3 = Geometry.GetFurthestPoint( direction , poly0 );
-        let fp1 : Vector3 = Geometry.GetFurthestPoint( direction.reverse() , poly1 );
-        return fp1.sub( fp0 );
-
-    }
-
-    static IsPassOrigin( direction : Vector3 , supportVector3 : Vector3 ) : boolean {
-        return direction.dot( supportVector3 ) > 0;
-    }
-
-    static GetCentroid( poly : Array< Vector3 > ) {
-        
-        let centroid = new Vector3();
-        for( let i = 0 ; i < poly.length ; ++ i ){
-            centroid.add( poly.at( i ) );
-        }
-        centroid.scale( 1.0 / poly.length );
-        return centroid ;
-
-    }
-
-    static GetNormalTowardOrigin( start : Vector3 , end : Vector3 ) : Vector3 {
-        let line : Vector3 = end.sub( start );
-        let perpendicular = line.perpendicular();
-        let o = Vector3.O.sub( start );
-        if( perpendicular.dot( o ) < 0  ) perpendicular = perpendicular.reverse();
-        
-        return perpendicular;
-    }
-
-    static GetNearestEdgeToOrigin( A : Vector3 , B : Vector3 , C : Vector3 ){
-
-
-    }
-
-    static GetDistanceFromPointToLine( point : Vector3 , start : Vector3 , end : Vector3 ) : number {
-
-        return ( ( start.x  - point.x ) * ( end.y - start.y ) - ( start.y - point.y ) * ( end.x - start.x ) ) / Math.sqrt( Math.pow( end.x - start.x , 2 ) * Math.pow( end.y , start.y ) ); 
-    }
-
     static ConvertToBaryCentricCoordinate( A : Vector3 , B : Vector3 , C : Vector3 , P : Vector3 ) : Vector3 {
         
         let AB : Vector3 = B.sub( A );
@@ -201,65 +118,243 @@ class Geometry {
 
     }
 
-    static BFNearest( A : Array< Vector3 > , B : Vector3 ) : number {
-        
-        if( A.length <= 0 ) return -1;
-        
-        let dist : number = A.at( 0 ).sub( B ).squareLength();
-        let index : number = 0;
+}
 
-        for( let i = 1 ; i < A.length ; ++ i ){
-            let d = A.at( i ).sub( B ).squareLength();
-            if( d < dist ){
-                dist = d;
-                index = i;
-            }
-        }
+enum ShapeType { SHAPE , PATH  , ARC , CIRCLE , ELLIPSE , RECTANGLE , POLYGON , TEXT };
 
-        return index;
+class Shape {
 
+    public get shapeType() { return ShapeType.SHAPE; }
+
+    constructor(){ }
+
+    getPoints() : Array< Vector3 > {
+        return new Array< Vector3 > ();
+    };
+
+}
+
+class Path extends Shape {
+
+    public points : Array<Vector3>;
+
+    public get shapeType() { return ShapeType.PATH; }
+
+    constructor( ){
+        super();
+        this.points = new Array<Vector3>();
     }
 
-    static normalize( A : Array< Vector3> ) : Array< Vector3 > {
-        
-        let centroid = new Vector3();
-        for( let i = 0 ; i < A.length ; ++ i ){
-            centroid = Vector3.Addition( centroid ,  A.at( i ).scale( 1.0 / A.length ) )
-        }
-
-        let results : Array< Vector3 > = new Array< Vector3 >();
-
-        for( let i = 0 ; i < A.length ; ++ i ){
-            results.push( A.at( i ).sub( centroid ) );
-        }
-        return results;
-
+    append( point : Vector3 ){
+        this.points.push( point );
     }
 
-    static ICPRegistration( A : Array< Vector3 > , B : Array< Vector3 > ) : void {
+    getPoints() : Array< Vector3 > {
+        return this.points;
+    };
 
-        A = Geometry.normalize( A );
-        B = Geometry.normalize( B );
-        
-        // find the nearest point
-        let nearest : Array< number > = new Array< number >();
+}
 
-        for( let i = 0 ; i < A.length ; ++ i ){
-
-            let point : Vector3 = A.at( i );
-            let nearestIndex : number = Geometry.BFNearest( B , point );
-            nearest.push( nearestIndex );
-
-        }
-
-
-    }
-
-
-
-
+class Arc extends Shape {
     
+    public from : number;
+    public to : number; 
+    public radius : number; 
+    public startAngle : number ;
+    public endAngle : number;
+
+    public get shapeType() { return ShapeType.ARC; }
+
+    constructor( startAngle : number = 0.0 , endAngle : number = 90.0 , radius : number = 100){
+
+        super();
+
+        this.startAngle = startAngle * Math.PI / 180;
+        this.endAngle = endAngle * Math.PI / 180;
+        this.radius = radius;
+        
+    }
+
+    getPoints() : Array< Vector3 > {
+        
+        // TODO : step should be calculated according the radius and the transform matrix
+        let step : number = Math.floor( Math.PI * this.radius / 4 );
+        let stride : number = ( this.endAngle - this.startAngle ) / step;
+        let points : Array< Vector3 > = new Array< Vector3 >();
+
+        for( let i = 0 ; i < step ; ++ i ){
+            let x : number = Math.cos( i * stride ) * this.radius;
+            let y : number = Math.sin( i * stride ) * this.radius;
+            points.push( new Vector3( x , y ) );
+        }
+        
+        return points;
+    
+    };
+
+}
+
+class Circle extends Arc{
+
+    public get shapeType() { return ShapeType.CIRCLE; }
+
+    constructor( r = 1 ){
+        super(0 , 360 , r);
+    }
+
+}
+
+class Ellipse extends Shape {
+
+    public a : number;
+    public b : number;
+
+    public get shapeType() { return ShapeType.ELLIPSE; }
+
+    constructor( a = 1 , b = 1 ){
+        super();
+        this.a = a;
+        this.b = b;
+    }
+
+    getPoints() : Array< Vector3 > {
+        let mat : Matrix3 = new Matrix3( this.a , 0, 0, 0, this.b, 0, 0, 0, 1 );
+        let step : number = Math.floor( Math.PI * 2 * Math.sqrt( this.a * this.b ) );
+        let stride : number = Math.PI * 2 / step;
+        let edge : Array< Vector3 > = new Array< Vector3 >;
+
+        for( let i = 0 ; i < step ; ++i ){
+            edge.push( new Vector3( Math.cos( i * stride ) , Math.sin( i * stride ) ).applyTransform( mat ) );
+        }
+
+        return edge;
+    };
+
+
+};
+
+class Rectangle extends Shape{
+
+    public width : number;
+    public height : number;
+
+    public get shapeType() { return ShapeType.RECTANGLE; }
+
+    constructor( width : number , height : number , x = 0 , y = 0 ){
+        super();
+        this.width = width;
+        this.height = height;
+    }
+
+    getPoints() : Array< Vector3 > {
+        
+        let hw : number = this.width / 2;
+        let hh : number = this.height / 2;
+        
+        return [
+            new Vector3( -hw , -hh ),
+            new Vector3(  hw , -hh ),
+            new Vector3(  hw ,  hh ),
+            new Vector3( -hw ,  hh ),
+        ];
+
+    };
+
+}
+
+class Polygon extends Shape{
+    
+    public points : Array<Vector3>;
+
+    public get shapeType() { return ShapeType.POLYGON; }
+
+    constructor( points : Array<Vector3>){
+        super();
+        this.points = points;
+    }
+
+    append( vertex : Vector3 ){
+
+        this.points.push( vertex );
+
+    }
+
+    getPoints() : Array< Vector3 > {
+        return this.points;
+    };
+
+
+}
+
+class Convex extends Polygon{
+
+    constructor( points : Array<Vector3> ){
+        points = GMath.GetConvex( points );
+        super( points );
+    }
+
+
+}
+
+class QuadraticBezierCurve extends Path{
+
+    public p0 : Vector3;
+    public p1 : Vector3;
+    public p2 : Vector3;
+
+    constructor( p0 : Vector3 , p1 : Vector3 , p2 : Vector3 ){
+        super();
+        this.p0 = p0 ;
+        this.p1 = p1 ;
+        this.p2 = p2 ;
+    }
+
+    getPoints() : Array< Vector3 > {
+        return new Array< Vector3 > ();
+    };
+
+
+}
+
+class Text extends Shape {
+    
+    public text : string ;
+    public fontSize : number;
+    public _size : number ;
+    public _family : string;
+
+    public _baseline : string ;
+
+    public get shapeType() { return ShapeType.TEXT; }
+
+    public get size(){ return this._size ;}
+
+    public get family(){ return this._family; }
+
+    public get baseline(){
+        return this._baseline;
+    }
+
+    public set size( size : number ) { 
+        this._size = size;
+    }
+
+    public set baseline( _baseline : string ) { 
+        this._baseline = _baseline ;
+    }
+
+    public set family( family : string ) { 
+        this._family = family;
+    }
+    
+    constructor( text : string ){
+        super( );
+        this.text = text;
+        this.fontSize = 10;
+    }
+
 }
 
 
-export { Geometry }
+
+export { Geometry , Shape , Path , Arc , Circle , Ellipse , Rectangle , Polygon , Convex , QuadraticBezierCurve , ShapeType ,Text }

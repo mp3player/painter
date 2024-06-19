@@ -1,4 +1,5 @@
 import { Stack } from "./collection.js";
+import { GMath } from "./math.js";
 import { Complex , Vector3 } from "./vector.js";
 
 const _lut = ["00","01","02","03","04","05","06","07","08","09","0a","0b","0c","0d","0e","0f","10","11","12","13","14","15","16","17","18","19","1a","1b","1c","1d","1e","1f","20","21","22","23","24","25","26","27","28","29","2a","2b","2c","2d","2e","2f","30","31","32","33","34","35","36","37","38","39","3a","3b","3c","3d","3e","3f","40","41","42","43","44","45","46","47","48","49","4a","4b","4c","4d","4e","4f","50","51","52","53","54","55","56","57","58","59","5a","5b","5c","5d","5e","5f","60","61","62","63","64","65","66","67","68","69","6a","6b","6c","6d","6e","6f","70","71","72","73","74","75","76","77","78","79","7a","7b","7c","7d","7e","7f","80","81","82","83","84","85","86","87","88","89","8a","8b","8c","8d","8e","8f","90","91","92","93","94","95","96","97","98","99","9a","9b","9c","9d","9e","9f","a0","a1","a2","a3","a4","a5","a6","a7","a8","a9","aa","ab","ac","ad","ae","af","b0","b1","b2","b3","b4","b5","b6","b7","b8","b9","ba","bb","bc","bd","be","bf","c0","c1","c2","c3","c4","c5","c6","c7","c8","c9","ca","cb","cc","cd","ce","cf","d0","d1","d2","d3","d4","d5","d6","d7","d8","d9","da","db","dc","dd","de","df","e0","e1","e2","e3","e4","e5","e6","e7","e8","e9","ea","eb","ec","ed","ee","ef","f0","f1","f2","f3","f4","f5","f6","f7","f8","f9","fa","fb","fc","fd","fe","ff"]
@@ -22,206 +23,6 @@ class Tool{
         return uuid.toUpperCase();
     }
 
-    static getSlop( v0 : Vector3 , v1 : Vector3 ) : number {
-        if( v0.x == v1.x ) return Number.POSITIVE_INFINITY;
-        return ( v1.y - v0.y ) / ( v1.x - v0.x );
-    }
-
-    static isLineIntersected( p0 : Vector3 , p1 :Vector3 , p2 : Vector3 , p3 : Vector3  ) : boolean {
-
-        // l0 => p0 : upper , p1 : lower
-        // l1 => p2 : upper , p3 : lower
-        
-        let v0 = p2.sub(p1); // ( l1->upper - l0->lower , 1.0f );
-        let v1 = p0.sub(p2)//( l0->upper - l1->upper , 1.0f );
-        let v2 = p3.sub(p0)//( l1->lower - l0->upper , 1.0f );
-        let v3 = p1.sub(p3)//( l0->lower - l1->lower , 1.0f );
-    
-        let c0z : number = Vector3.Direction(v0,v1);
-        let c1z : number = Vector3.Direction(v1,v2);
-        let c2z : number = Vector3.Direction(v2,v3);
-        let c3z : number = Vector3.Direction(v3,v0);
-    
-        if( c0z > 0 && c1z > 0 && c2z > 0 && c3z > 0 || c0z < 0 && c1z < 0 && c2z < 0 && c3z < 0 ){
-            return true;
-        }
-        return false;
-    }
-
-    static IsPointInCircle( center : Vector3 , radius : number  , point : Vector3 ) : boolean {
-
-        let dis = Vector3.SquaDist(center , point);
-        if(dis > radius * radius)
-            return false;
-        return true;
-
-    }
-
-    static IsPoingInEllipse( a : number , b : number , point : Vector3 ) : boolean {
-        return false;
-    }
-
-    static isPointInLine( p0 : Vector3 , p1 : Vector3 , point : Vector3 , eps = 1.0 ) : boolean {
-
-        if( p0.x == p1.x ){
-            // vertical line
-            let min = p0.y > p1.y ? p1.y : p0.y;
-            let max = p0.y > p1.y ? p0.y : p1.y;
-            if( point.y > min - eps && point.y < max + eps && point.x > p0.x - eps && point.y < p0.x - eps ) return true;
-            return false; 
-        }
-
-        let min = p0.x > p1.x ? p1.x : p0.x;
-        let max = p0.x > p1.x ? p0.x : p1.x;
-
-        if( point.x < min - eps || point.y > max + eps  ) return false;
-
-        let k = ( p1.y - p0.y ) / ( p1.x - p0.x );
-        let b = p0.y - k * p0.x;
-        let y = k * point.x + b;
-        let error = y - point.y;
-        if( error * error < eps * eps )return true;
-
-        return false;
-
-    }
-
-    static isPointInPath( edge : Array< Vector3 > , point : Vector3 , eps = 1.0) : boolean {
-        for( let i = 1 ; i < edge.length ; ++i ){
-            if( this.isPointInLine( edge[ i - 1 ] , edge[i] , point , eps ) ) return true;
-        }
-        return false;
-    }
-
-    static IsPointInRect( edge : Array<Vector3> , point : Vector3 ) : boolean {
-
-        let left = edge[0].x , right = edge[0].x , top = edge[0].y , bottom = edge[0].y;
-        for( let i = 1 ; i < edge.length ; ++ i ){
-            let vertex = edge[i];
-            if( left > vertex.x ) left = vertex.x ;
-            else if( right < vertex.x ) right = vertex.x ;
-
-            if( top < vertex.y ) top = vertex.y;
-            else if ( bottom > vertex.y ) bottom = vertex.y;
-
-        }
-
-        return ( point.x >= left && point.x <= right && point.y >= bottom && point.y <= top)
-    }
-
-    static IsPointInPolygon( edge : Array<Vector3> , point : Vector3  ) : boolean {
-
-        let count = edge.length;
-        let flag = false;
-        for(let i = 0 , j = count - 1  ; i < count ; j = i ++){
-            let p0 = edge[j] ; 
-            let p1 = edge[i];
-
-            if( (point.x - p0.x) * (point.x - p1.x) > 0 ){
-                continue;
-            }
-
-            let deltaY = p1.y - p0.y;
-            let deltaX = p1.x - p0.x;
-            if(deltaX == 0){
-                if(point.x == p1.x)
-                    flag = !flag;
-                    continue;
-            }
-            let k = deltaY / deltaX;
-            let d = p0.y - k * p0.x;
-
-            let pY = k * point.x + d;
-            if(pY > point.y)
-                flag = !flag;
-
-        }
-        return flag;
-    }
-
-    static GetConvex( edge : Array<Vector3> ) : Array<Vector3> {
-        // 1、find the border point
-        let bottom = edge[0]
-        for( let i = 0 ; i < edge.length ; ++i ){
-            let v = edge[i];
-            if( v.y < bottom.y ) bottom = v;
-        }
-        
-        interface PointCache {
-            cos : number , 
-            vec : Vector3 
-        };
-
-        let e1 = new Vector3(1,0);
-        let angles:Array<PointCache> = []
-
-        let insert = (obj : PointCache) => {
-            if(angles.length <= 0){
-                angles.push(obj);
-                return ;
-            }
-            let i = 0;
-            while(i < angles.length){
-                if(obj.cos > angles[i].cos)
-                    break;
-                ++i;
-            }
-            angles.splice(i,0,obj);
-        }
-        
-        for(let i = 0 ; i < edge.length ; ++i ){
-
-            if( edge[i].equal( bottom ) )
-                continue;
-            let feature = edge[i].sub( bottom );
-            
-            let v = feature.normalize();
-            
-            let cos = e1.dot(v);
-            
-            if(!isNaN(cos)){
-                insert({cos , vec:edge[i]})
-            }
-        }
-    
-        //apply the algorithm for get the convex of the set of of the points
-
-        let stack = new Stack();
-        stack.push( bottom );
-        stack.push( angles[0].vec ); 
-        angles.shift();
-
-
-        // check if the point should be pushed into the stack 
-        let push = (stack : Stack<any> , vec : Vector3 ) => {
-            if(stack.length < 2){
-                stack.push(vec);
-                return ;
-            }
-            let p0 = stack.top();
-            stack.pop();
-            let p1 = stack.top();
-            stack.pop();
-            let v = p0.sub(p1);
-            let v1 = vec.sub(p0)
-            let z = Vector3.Direction(v,v1);
-            if(z > 0){
-                stack.push(p1)
-                stack.push(p0)
-                stack.push(vec);
-            }else{
-                stack.push(p1)
-                push(stack,vec);
-            }
-        }
-
-        //check all of the points
-        for(let i=0;i<angles.length;++i){
-            push(stack,angles[i].vec);
-        }
-        return stack.data;
-    }
-
     static Minkowski( conv1 : Array<Vector3>  , conv2 : Array<Vector3> , mode = 'diff' ) : Array<Vector3>{
         
         let shape : Array<Vector3> = [];
@@ -237,7 +38,7 @@ class Tool{
                 
             }
         }
-        shape = Tool.GetConvex(shape);
+        shape = GMath.GetConvex(shape);
         return shape;
     }
 
@@ -413,7 +214,7 @@ class Ray {
 
 }
 
-class BorderBox{
+class Box{
     
     public top : number;
     public right : number;
@@ -456,8 +257,8 @@ class BorderBox{
     }
 
     // box + box
-    add(box : BorderBox) : BorderBox {
-        return BorderBox.add(box,this);
+    add(box : Box) : Box {
+        return Box.add(box,this);
     }
 
     reset() : void{
@@ -483,33 +284,33 @@ class BorderBox{
         ];
     }
 
-    clone() : BorderBox {
-        return new BorderBox( this.top , this.right , this.bottom , this.left );
+    clone() : Box {
+        return new Box( this.top , this.right , this.bottom , this.left );
     }
 
     // box1 * box2
-    static intersection( box1 : BorderBox , box2 : BorderBox ) : BorderBox {
+    static intersection( box1 : Box , box2 : Box ) : Box {
         let top = box1.top < box2.top ? box1.top : box2.top;
         let right = box1.right < box2.right ? box1.right : box2.right;
         let bottom = box1.bottom > box2.bottom ? box1.bottom : box2.bottom;
         let left = box1.left > box2.left ? box1.left : box2.left;
 
-        return new BorderBox(top,right,bottom,left);
+        return new Box(top,right,bottom,left);
     }
 
     // static box1 + box2
-    static add(box1 : BorderBox , box2 : BorderBox ) : BorderBox {
+    static add(box1 : Box , box2 : Box ) : Box {
         let top = box1.top > box2.top ? box1.top : box2.top;
         let right = box1.right > box2.right ? box1.right : box2.right;
         let bottom = box1.bottom < box2.bottom ? box1.bottom : box2.bottom;
         let left = box1.left < box2.left ? box1.left : box2.left;
 
-        return new BorderBox(top,right,bottom,left);
+        return new Box(top,right,bottom,left);
     }
 
 }
 
-class BorderCircle {
+class Circle {
 
     public center : Vector3;
     public r : number;
@@ -535,4 +336,4 @@ class BorderCircle {
 
 }
 
-export {Tool , Ray , BorderBox , BorderCircle}
+export {Tool , Ray , Box , Circle}

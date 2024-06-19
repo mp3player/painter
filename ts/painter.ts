@@ -1,6 +1,8 @@
-import { Arc, Circle , Polygon, Rectangle, Shape , ShapeType, Text } from "./shape.js";
-
+import { Grid } from "./component/grid.js";
+import { TransformComponent } from "./component/transform.js";
 import { Entity } from "./entity.js";
+import { Matrix3 } from "./matrix.js";
+import { Vector3 } from "./vector.js";
 
 /**
  * render:
@@ -22,32 +24,37 @@ import { Entity } from "./entity.js";
  */
 
 
-class Painter extends Entity{
+abstract class Painter extends Entity{
 
-    constructor( ){
+}
+class CanvasPainter extends Painter{
 
-        super( );
+    private _context : CanvasRenderingContext2D = null;
+
+    constructor( _context : CanvasRenderingContext2D ){
+
+        super()
+        this._context = _context;
+
+        this.transform.setTranslation( this.getContextWidth() / 2 , this.getContextHeight() / 2 )
+        this.transform.setScale( 1 , -1 );
+        this.transform.forceUpdateTransformShape();
+
         this.index = -1;
 
     }
 
-    // update coordinateTransform
-    updateTransformPainter() : void {
-
-        // transform matrix apply to the painter
-        // let transform = new Matrix();
-
-        // transform = Matrix.Scale(transform , new Vector(1,-1));
-        // transform = Matrix.Translate(transform , new Vector(this.width / 2 , this.height / 2));
-
+    public getContextWidth() : number {
+        return this._context ? this._context.canvas.width : 0 ;
     }
 
-    // override
-    update( deltaTime : number ) : void {
-
+    public getContextHeight() : number {
+        return this._context ? this._context.canvas.height : 0;
     }
+
 
 }
+
 
 // convert all coordinate to painter space
 /**
@@ -222,4 +229,4 @@ invokeEvent = function( painter : Painter ) : void {
 
  */
 
-export { Painter }
+export { CanvasPainter }

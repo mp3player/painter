@@ -63,19 +63,19 @@ class Vector3{
         this.z = z;
     }
 
-    squareLength() : number {
+    public squareLength() : number {
         return this.x * this.x + this.y * this.y;
     }
 
-    length() : number {
+    public length() : number {
         return hypot(this.x , this.y);
     }
 
-    equal( v : Vector3 ) : boolean {
+    public equal( v : Vector3 ) : boolean {
         return (this.x == v.x) && (this.y == v.y)
     }
 
-    normalize() : Vector3 {
+    public normalize() : Vector3 {
         let len = this.length();
 
         if(len != 0){
@@ -85,11 +85,11 @@ class Vector3{
         return new Vector3();
     }
 
-    add( v : Vector3 ) : Vector3 {
+    public add( v : Vector3 ) : Vector3 {
         return new Vector3( this.x + v.x , this.y + v.y );
     }
 
-    sub( v : Vector3 ) : Vector3 {
+    public sub( v : Vector3 ) : Vector3 {
         return new Vector3( this.x - v.x , this.y - v.y );
     }
 
@@ -99,7 +99,7 @@ class Vector3{
      * 2 , 5 , 8
      */
     // TODO : vector is 2-d , the 3rd row should be 1;
-    applyTransform( mat : Matrix3  ) : Vector3 {
+    public applyTransform( mat : Matrix3  ) : Vector3 {
         let v0 = mat.data[0] * this.x + mat.data[3] * this.y + mat.data[6] * 1;
         let v1 = mat.data[1] * this.x + mat.data[4] * this.y + mat.data[7] * 1;
         // let v3 = mat.data[2] * this.x + mat.data[5] * this.y + mat.data[8] * 1; 
@@ -108,27 +108,37 @@ class Vector3{
 
     }
 
-    scale( factor : number ) : Vector3 {
+    public scale( factor : number ) : Vector3 {
         return new Vector3( this.x * factor , this.y * factor );
     }
 
-    reverse() : Vector3 {
+    public reverse() : Vector3 {
         return this.scale( -1 );
     }
 
-    perpendicular() : Vector3 {
+    public perpendicular() : Vector3 {
         return new Vector3( this.y , this.x );
     }
 
-    dot( v : Vector3 ) : number {
+    public dot( v : Vector3 ) : number {
         return this.x * v.x + this.y * v.y;
     }
 
-    clone() : Vector3 {
+    public clone() : Vector3 {
         return new Vector3(this.x , this.y);
     }
 
-    toString( ) : string {
+    public cross( v : Vector3 ) : Vector3 {
+
+        let x = this.y * v.z - this.z * v.y;
+        let y = this.z * v.x - this.x * v.z
+        let z = this.x * v.y - this.y * v.x;
+
+        return new Vector3( x , y , z );
+
+    }
+
+    public toString( ) : string {
         return `{ x: ${ this.x } , y: ${ this.y } }`
     }
 
@@ -172,9 +182,9 @@ class Vector3{
 
     }
 
-    static O : Vector3 = new Vector3(0,0);
-    static X : Vector3 = new Vector3(1,0);
-    static Y : Vector3 = new Vector3(0,1);
+    static O : Vector3 = new Vector3( 0 , 0 , 0 );
+    static X : Vector3 = new Vector3( 1 , 0 , 0 );
+    static Y : Vector3 = new Vector3( 0 , 1 , 0 );
 
 }
 

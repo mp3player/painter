@@ -1,23 +1,29 @@
 import { Timer } from './timer.js'
-import { Painter } from './painter.js'
-import { Circle , Rectangle , Polygon , Ellipse , Path , Text } from './shape.js';
+import { CanvasPainter } from './painter.js'
+import { Circle , Rectangle , Polygon , Ellipse , Path , Text } from './geometry.js';
 import { Color } from './style.js';
 import { Vector3 } from './vector.js';
-import { ActiveEvent , EventSystem, MouseActiveEvent } from './event.js';
-import { TransformSystem } from './system.js';
+import { ActiveEvent , EventSystem, MouseActiveEvent } from './system/event.js';
+import { TransformSystem } from './system/transform.js';
 import { Entity } from './entity.js';
-import { ShapeComponent } from './component.js';
-import { PhysicsSystem } from './physics.js';
-import { CanvasRenderSystem } from './render.js'
+
+import { PhysicsSystem } from './system/physics.js';
+import { CanvasRenderSystem } from './system/render.js'
 import { Geometry } from './geometry.js';
+import { RendererComponent } from './component/render.js';
+import { ShapeComponent } from './component/shape.js';
+import { BoxComponent } from './component/box.js';
+import { Matrix3 } from './matrix.js';
+import { SystemBase } from './system/system.js';
+
 
 let ellipse : Entity;
 
 class Application {
     
     public static app : Application = null;
-    private painter : Painter ;
-    private context : HTMLCanvasElement;
+    private painter : CanvasPainter ;
+    private context : CanvasRenderingContext2D;
     private width : number;
     private height : number;
 
@@ -28,34 +34,46 @@ class Application {
 
     private constructor( ){
 
-        this.painter = new Painter();
+        this.context = document.createElement('canvas').getContext('2d');
+        this.context.canvas.width = innerWidth ;
+        this.context.canvas.height = innerHeight;
+        this.context.canvas.style.position = 'absolute';
+        this.context.canvas.style.top = '0';
+        this.context.canvas.style.left = '0'
 
-        this.context = document.createElement('canvas');
-        this.renderSystem = new CanvasRenderSystem( this.painter , 'render' , this.context );
+        this.painter = new CanvasPainter( this.context );
+
+        this.renderSystem = new CanvasRenderSystem( this.painter , 'render' );
         this.transformSystem = new TransformSystem( this.painter , 'transform' );
-        this.eventSystem = new EventSystem( this.painter , 'event' , this.context );
+        this.eventSystem = new EventSystem( this.painter , 'event' );
         this.physics = new PhysicsSystem( this.painter , 'physics' );
 
         this.width = innerWidth;
         this.height = innerHeight;
 
-        this.renderSystem.resize( this.width , this.height );
+        this.renderSystem.setContext( this.context );
 
         this.init();
+
+        this.dispatchEvent()
 
     }
 
     init() : void {
-
-        this.painter.findComponent('renderer').style.background = new Color( 100 , 100 , 100 );
+        
+        let renderComponent : RendererComponent = new RendererComponent();
+        this.painter.addComponent( renderComponent );
+        this.painter.findComponentByClass( RendererComponent ).style.background = new Color( 100 , 100 , 100 );
 
         this.painter.add( Application.createCircle( 100 ) );
 
-        
-    
         ellipse = Application.createEllipse( 100 , 50 );
         ellipse.transform.translate( new Vector3( 100 , 200 ) );
         this.painter.add( ellipse );
+
+        let box = new BoxComponent();
+        box.setSize( 300 , 300 );
+        ellipse.addComponent( box );
 
         this.painter.add( Application.randomPath() );
 
@@ -67,12 +85,7 @@ class Application {
             poly.push( new Vector3( x , y ) );
         }
 
-        poly = Geometry.normalize( poly );
-
         this.painter.add( Application.createPolygon( poly ) );
-
-
-
 
 
         // let str = `「如果尖銳的批評完全消失，溫和的批評將會變得刺耳。\n
@@ -102,19 +115,19 @@ class Application {
         }
 
         if( element ){
-            element.appendChild( this.renderSystem.getCanvas() );
+            element.appendChild( this.context.canvas );
         }
 
     }
 
     update( deltaTime : number ) : void {
 
+        SystemBase.enQueue( this.painter );
         this.physics.update( deltaTime );
         this.transformSystem.update( deltaTime );
         this.renderSystem.update( deltaTime );
+        // ellipse.transform.rotate( .05 );
 
-        ellipse.transform.rotate( .05 );
-        
     }
 
     run() : void {
@@ -126,10 +139,82 @@ class Application {
             let deltaTime = Timer.getDelteTime();
             this.update( deltaTime );
             // this.painter.transform.rotate( .01 );
+            // console.log( this.painter.transform.needUpdate )
             
         }
         _update();
 
+    }
+
+    dispatchEvent() : void {
+
+        window.addEventListener('resize' , ( e : Event ) =>{
+
+            // if( painter.resizable ){
+            //     painter.resize( innerWidth , innerHeight );
+            // }
+    
+        })
+
+        this.context.canvas?.addEventListener('mousedown' , (e : MouseEvent) => {
+
+            let screenLocation : Vector3 = new Vector3( e.x , e.y );
+            let painterLocation = screenLocation.applyTransform( this.painter.transform.inverseTransformShape );
+            let event : any = new MouseActiveEvent( e , 'mousedown' , painterLocation );
+
+            this.eventSystem.invokeMouseEvent( 'mousedown' , event );
+            this.eventSystem.invokeMouseEvent( 'dragstart' , event );
+    
+        });
+    
+        this.context.canvas?.addEventListener('mousemove' , (e : MouseEvent) => {
+
+            let screenLocation : Vector3 = new Vector3( e.x , e.y );
+            let painterLocation = screenLocation.applyTransform( this.painter.transform.inverseTransformShape );
+            let event : any = new MouseActiveEvent( e , 'mousedown' , painterLocation );
+
+            // this.eventSystem.invokeMouseEvent( 'mousemove' , event );
+            // this.eventSystem.invokeMouseEvent( 'drag' , event );
+    
+        })
+    
+        this.context.canvas?.addEventListener('mouseup' , (e : MouseEvent) => {
+
+            let screenLocation : Vector3 = new Vector3( e.x , e.y );
+            let painterLocation = screenLocation.applyTransform( this.painter.transform.inverseTransformShape );
+            let event : any = new MouseActiveEvent( e , 'mousedown' , painterLocation );
+
+            this.eventSystem.invokeMouseEvent( 'mouseup' , event );
+            this.eventSystem.invokeMouseEvent( 'drop' , event );
+    
+        })
+    
+        this.context.canvas?.addEventListener('contextmenu' , (e) => {
+            e.preventDefault();
+        })
+    
+        this.context.canvas?.addEventListener('keydown' , e => {
+            return false;
+        })
+    
+        this.context.canvas?.addEventListener('mousewheel' , ( e : WheelEvent ) => {
+
+            let screenLocation : Vector3 = new Vector3( e.x , e.y );
+            let painterLocation = screenLocation.applyTransform( this.painter.transform.inverseTransformShape );
+            let event : any = new MouseActiveEvent( e , 'mousedown' , painterLocation );
+            
+            this.eventSystem.invokeMouseEvent( 'mousewheel' , event );
+
+        })
+
+    }
+
+    public screenToPainter( coord : Vector3 ) : Vector3 {
+        return new Vector3
+    }
+
+    public painterToScreen( coord : Vector3 ) : Vector3 {
+        return new Vector3
     }
 
     static createInstance( element : string | HTMLElement ) : Application {
@@ -197,8 +282,8 @@ class Application {
 
         let entity : Entity = new Entity();
 
-        entity.findComponent('renderer').style.background = Color.Red;
-        entity.findComponent('renderer').style.color = Color.Blue;
+        entity.findComponentByClass( RendererComponent ).style.background = Color.Red;
+        entity.findComponentByClass( RendererComponent  ).style.color = Color.Blue;
         entity.addComponent( shapeComponent );
 
         return entity ;
@@ -206,5 +291,8 @@ class Application {
     }
 
 }
+
+
+
 
 export { Application }

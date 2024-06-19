@@ -1,12 +1,14 @@
 import { ArrayList } from "./collection.js";
-import { BoxComponent, CircleComponent, Component , TransformComponent } from "./component.js";
-import { RendererComponent } from "./render.js";
+import { CircleComponent } from "./component/circle.js";
+import { Component } from "./component/component.js";
+import { RendererComponent } from "./component/render.js";
+import { TransformComponent } from "./component/transform.js";
 import { Tool } from "./util.js";
+
 
 class Entity {
 
-    
-    public components : Map< string , Component > = new Map< string , Component >();
+    public components : ArrayList< Component > = new ArrayList< Component >();
     public transform : TransformComponent = new TransformComponent( 'transform' );
     protected _index : number;
     protected _uuid : string;
@@ -48,33 +50,45 @@ class Entity {
     // component related
     addComponent( component : Component ) : void {
 
-        this.components.set( component.name , component );
-        component.entity = this;
+        this.components.add( component );
+        component.attachTo( this );
         
     }
 
-    hasComponent( name : string ) : boolean {
-
-        return this.components.has( name );
-
+    findComponentByClass( componentClass : any ) : any {
+        for( let i = 0 ; i < this.components.length ; ++ i  ){
+            if( this.components.get( i ) instanceof componentClass ) return this.components.get( i );
+        }
     }
 
-    findComponent( name : string ) : Component | any {
-        
-        if( this.hasComponent( name ) ){
-            return this.components.get( name );
+    findComponentsByClass( componentClass : any ) : Array<any>  {
+        let result : Array< any > = []
+        for( let i = 0 ; i < this.components.length ; ++ i  ){
+            if( this.components.get( i ) instanceof componentClass ) {
+                result.push( this.components.get( i ) )
+            }
+        }
+        return result;
+    }
+
+    findComponentByName( name : string ) : Component | any {
+        for( let i = 0 ; i < this.components.length ; ++ i  ){
+            if( this.components.get( i ).name == name ) {
+                return this.components.get( i );
+            }
         }
         return null;
-
     }
 
-    removeComponent( name : string ) : boolean {
-
-        if( this.hasComponent( name ) ) {
-            return this.components.delete( name );
+    removeComponentByName( name : string ) : boolean {
+        let deleteIndex = -1;
+        for( let i = 0 ; i < this.components.length ; ++ i  ){
+            if( this.components.get( i ).name == name ) {
+                deleteIndex = i;
+                break;
+            }
         }
-        return false;
-
+        return deleteIndex >= 0
     }
 
 }
