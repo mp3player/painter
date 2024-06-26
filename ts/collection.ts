@@ -306,8 +306,10 @@ const defaultComparer : _Comp<any> = ( a : any , b : any ) => {
 class PriorityQueue<T> {
     
     private data : Array< T > ;
+    private orderedData : Array< T >
     private _length : number ;
     private comparer : _Comp<T>
+    private _needUpdate = true;
 
     public get length() {
 
@@ -319,6 +321,7 @@ class PriorityQueue<T> {
         this._length = 0;
         this.data = new Array<T>;
         this.comparer = comparer;
+        this.orderedData = [];
     }
 
     public push( v : T ) : void {
@@ -326,6 +329,7 @@ class PriorityQueue<T> {
         this.data.push( v );
         this._length += 1;
         this.shiftUp( this._length - 1 );
+        this._needUpdate = true;
 
     }
 
@@ -343,6 +347,7 @@ class PriorityQueue<T> {
         this.data.pop();
         this._length -= 1;
         this.shiftDown( 0 );
+        this._needUpdate = true;
         return true;
 
     }
@@ -354,6 +359,7 @@ class PriorityQueue<T> {
     public clear() : void {
         this._length = 0;
         this.data = new Array<T>();
+        this._needUpdate = true;
     }
 
     private shiftUp( index : number ) : void {
@@ -366,7 +372,7 @@ class PriorityQueue<T> {
         }
     }
 
-    public shiftDown( index : number ) : void {
+    private shiftDown( index : number ) : void {
         
         let c : number = index * 2 + 1;
         if( c < this._length ){
@@ -396,25 +402,25 @@ class PriorityQueue<T> {
      */
     public getOrderedData( ) : Array< T >  {
         
-        // copy data , 
-        let copiedData : Array< T > = [];
-        for( let i = 0 ; i < this.length ; ++ i ){
-            copiedData.push( this.data[i] );
+        if( this._needUpdate ){
+
+            let copiedData : Array< T > = [];
+            for( let i = 0 ; i < this.length ; ++ i ){
+                copiedData.push( this.data[i] );
+            }
+
+            this.orderedData = [];
+
+            while( !this.isEmpty() ){
+                this.orderedData.push( this.top() );
+                this.pop();
+            }
+
+            this.data = copiedData;
+            this._length = copiedData.length ;
         }
-        // pop 
-        // reset data 
 
-        let result : Array< T > = [];
-
-        while( !this.isEmpty() ){
-            result.push( this.top() );
-            this.pop();
-        }
-
-        this.data = copiedData;
-        this._length = copiedData.length ;
-
-        return result ;
+        return this.orderedData;
 
     }
 

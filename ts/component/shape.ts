@@ -23,6 +23,7 @@ class ShapeComponent extends Component {
     }
 
     public getPoints() : Array< Vector3 > {
+        
         return this.points;
 
     }

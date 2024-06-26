@@ -17,7 +17,6 @@ abstract class SystemBase {
     
     public update( deltaTime : number ) {}
 
-
     // static
     static enQueue( painter : CanvasPainter ) : void {
 
@@ -36,7 +35,6 @@ abstract class SystemBase {
                 let entity : Entity = list.get( i );
                 process( entity );
             }
-            
         }
 
         for( let i = 0 ; i < painter.children.length ; ++ i ){
@@ -46,9 +44,6 @@ abstract class SystemBase {
     }
 
     static EntityBuffer : PriorityQueue< Entity > = new PriorityQueue< Entity >;
-
-
-    
 
 }
 

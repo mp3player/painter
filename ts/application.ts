@@ -85,7 +85,6 @@ class Application {
             poly.push( new Vector3( x , y ) );
         }
 
-        this.painter.add( Application.createPolygon( poly ) );
 
 
         // let str = `「如果尖銳的批評完全消失，溫和的批評將會變得刺耳。\n
@@ -123,10 +122,14 @@ class Application {
     update( deltaTime : number ) : void {
 
         SystemBase.enQueue( this.painter );
-        this.physics.update( deltaTime );
         this.transformSystem.update( deltaTime );
+        this.physics.update( deltaTime );
         this.renderSystem.update( deltaTime );
+
         // ellipse.transform.rotate( .05 );
+        SystemBase.EntityBuffer.clear();
+
+        // console.log( SystemBase.EntityBuffer )
 
     }
 

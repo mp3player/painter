@@ -27,6 +27,7 @@ import { Vector3 } from "./vector.js";
 abstract class Painter extends Entity{
 
 }
+
 class CanvasPainter extends Painter{
 
     private _context : CanvasRenderingContext2D = null;

@@ -15,7 +15,6 @@ class TransformSystem extends SystemBase {
     public update( deltaTime : number ) : void {
 
         // 1.update Painter world Transformation 
-        
 
         // 2.update the transformation of the children attached to the painter
 

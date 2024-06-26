@@ -158,14 +158,6 @@ class CanvasRenderSystem extends RenderSystem {
 
     }
 
-    private beginFill( color : Color ) : void {
-        this._context.fillStyle = color.toString();
-    }
-
-    private endFill( ) : void {
-        this._context.fill();
-    }
-
     private restore() : void {
         this._context.restore();
     }
@@ -197,17 +189,13 @@ class CanvasRenderSystem extends RenderSystem {
         let edge : Array< Vector3 > = buffer.getData();
 
         this.sandboxRender( ( ) => {
-            this.save();
 
             this.setStyle( renderComponent );
             this.beginPath( );
-
             this.bufferPath( edge );
-
             this.closePath();
             this.endPath();
 
-            this.restore();
         })
 
     }
@@ -230,9 +218,10 @@ class CanvasRenderSystem extends RenderSystem {
         this.flush();
 
         // render the queue in order
-        while( !SystemBase.EntityBuffer.isEmpty() ){
+        let queue : Array< Entity > = SystemBase.EntityBuffer.getOrderedData();
+        for( let i = 0 ; i < queue.length ; ++ i  ){
 
-            let node : Entity = SystemBase.EntityBuffer.top();
+            let node : Entity = queue.at( i );
 
             let transformComponent : TransformComponent = node.findComponentByClass( TransformComponent );
             let shapeComponent : ShapeComponent = node.findComponentByClass( ShapeComponent );
@@ -242,9 +231,6 @@ class CanvasRenderSystem extends RenderSystem {
             if( !shapeComponent ) continue;
 
             shapeComponent.update( deltaTime );
-
-            // dequeue this entity
-            SystemBase.EntityBuffer.pop();
 
             let points = shapeComponent.getPoints();
             let buffer : RenderBuffer = null;
@@ -267,7 +253,7 @@ class CanvasRenderSystem extends RenderSystem {
 
             }else if( shapeComponent.shape instanceof Text ){
 
-
+                this.strokeText();
 
             }else{
 

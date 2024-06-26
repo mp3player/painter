@@ -17,14 +17,14 @@ class EventType {
 };
 
 abstract class ActiveEvent {
-    protected  _originEvent : UIEvent;
-    public target : EventListener | null
+    protected  _originEvent : MouseEvent ;
+    public target : EventListener | null ;
     
     public get originEvent(){
         return this._originEvent;
     }
 
-    constructor( event : UIEvent ){
+    constructor( event : MouseEvent ){
         this._originEvent = event;
         this.target = null;
     }
@@ -124,7 +124,7 @@ class EventSystem extends SystemBase {
     }
 
     public invokeMouseEvent( eventName : string , event : MouseActiveEvent ) : void {
-        // this.eventHandler( eventName , event );
+        this.eventHandler( eventName , event );
     }
 
     public eventHandler( name : string , event : MouseActiveEvent ) : void {
@@ -158,15 +158,18 @@ class EventSystem extends SystemBase {
 
         let path : Array< _Temp >  = new Array< _Temp >();
 
-        // touch checking
         let queue = SystemBase.EntityBuffer.getOrderedData();
+        console.log( queue.length )
 
         for( let i = queue.length - 1 ; i >= 0 ; --i ){
+
             let cache = queue[ i ];
+            console.log( cache )
             // let touched = isTouch( cache , action.location );
             // if( touched ){
                 // path.push( { index : cache.ref.index , shape : cache.ref } );
             // }
+
         }
 /*
         path.push( { index : -1 , shape : CanvasPainter } );
