@@ -21,6 +21,7 @@ class RenderBuffer extends Buffer {
 
     private _data : Array< Vector3 >
     private _path : Path2D;
+    private _filled : boolean = true;
     private _ref : Entity
 
     public get path(){
@@ -34,6 +35,14 @@ class RenderBuffer extends Buffer {
     public get ref (){
         return this._ref;
     }
+
+    public get filled(){
+        return this._filled;
+    }
+
+    public set filled( _filled : boolean ){
+        this._filled = _filled;
+    }
     
     public constructor( data : Array< Vector3 > , ref : Entity ){
         super()
@@ -41,7 +50,7 @@ class RenderBuffer extends Buffer {
         this._ref = ref;
     }
 
-    getData() : Array< Vector3 > {
+    getBuffer() : Array< Vector3 > {
         return this.data;
     }
 
@@ -72,7 +81,8 @@ abstract class RenderSystem extends SystemBase {
 
 class CanvasRenderSystem extends RenderSystem {
     
-    private renderBuffer : Map< string , RenderBuffer > = new Map< string , RenderBuffer >;
+    private mapedRenderBuffer : Map< string , RenderBuffer > = new Map< string , RenderBuffer >;
+    private orderedRenderBuffer : PriorityQueue< RenderBuffer > = new PriorityQueue< RenderBuffer>();
 
     public constructor( scene : CanvasPainter , name : string = 'render') {
         super( scene , name );
@@ -96,18 +106,13 @@ class CanvasRenderSystem extends RenderSystem {
 
         this.save();
 
-        this.beginFill( renderComponent.style.background );
+        let width : number = this.getContextWidth();
+        let height : number = this.getContextHeight();
 
-        this.beginPath( );
-        this.moveTo( new Vector3( 0, 0) );
+        this.setProperty( "fillStyle" , renderComponent.style.background );
+        this._context.fillRect( 0 , 0 , width , height );
+        this.fill();
 
-        this.lineTo( new Vector3( 0 , this.getContextHeight() ) )
-        this.lineTo( new Vector3( this.getContextWidth() , this.getContextHeight() ) )
-        this.lineTo( new Vector3( this.getContextWidth() , 0 ) )
-
-        this.closePath();
-
-        this.endFill();
         this.restore();
     }
 
@@ -122,28 +127,36 @@ class CanvasRenderSystem extends RenderSystem {
 
     }
 
-    private moveTo( point : Vector3 ) : void {
+    public moveTo( point : Vector3 ) : void {
         this._context.moveTo( point.x , point.y );
     }
 
-    private lineTo( point : Vector3 ) : void {
+    public lineTo( point : Vector3 ) : void {
         this._context.lineTo( point.x , point.y );
     }
 
-    private save() : void {
+    public save() : void {
         this._context.save();
     }
 
-    private beginPath() : void {
+    public restore() : void {
+        this._context.restore();
+    }
+
+    public beginPath() : void {
         this._context.beginPath();
     };
 
-    private endPath( ) : void {
+    public closePath() : void {
+        this._context.closePath();
+    }
+
+    public stroke() : void {
         this._context.stroke();
     }
 
-    private closePath() : void {
-        this._context.closePath();
+    public fill() : void {
+        this._context.fill();
     }
 
     private bufferPath( edge : Array< Vector3 > ){
@@ -158,46 +171,51 @@ class CanvasRenderSystem extends RenderSystem {
 
     }
 
-    private restore() : void {
-        this._context.restore();
-    }
+    private fillShape( node : Entity ) : void {
+        
+        let renderComponent : RendererComponent = node.findComponentByClass( RendererComponent );
+        let renderBuffer : RenderBuffer = this.mapedRenderBuffer.get( node.uuid );
+        let buffer : Array<Vector3> = renderBuffer.getBuffer();
 
-    private sandboxRender( callback : () => void  ) : void {
         this.save();
-        callback( );
+        this.beginPath();
+        this.setStyle( renderComponent );
+        this.bufferPath( buffer );
+        this.closePath();
+        this.fill();
         this.restore();
-    }
 
-    private fillShape( edge : Array< Vector3 > , renderComponent : RendererComponent  ) : void {
-        if( edge.length <= 0 ) return ;
-
-        this.sandboxRender( ( ) => {
-
-            this.setStyle( renderComponent );
-            this.beginPath( );
-            this.bufferPath( edge );
-            this.closePath();
-            this.endPath();
-            this.endFill();
-
-        } )
     };
 
-    private strokeShape( buffer : RenderBuffer , renderComponent : RendererComponent ) : void {
+    private strokeShape( node : Entity ) : void {
 
-        if( buffer.getData().length <= 0 ) return ;
-        let edge : Array< Vector3 > = buffer.getData();
+        let renderComponent = node.findComponentByClass( RendererComponent );
+        let buffer : Array<Vector3 > = this.mapedRenderBuffer.get( node.uuid ).getBuffer();
 
-        this.sandboxRender( ( ) => {
+        this.save();
+        this.beginPath();
+        this.setStyle( renderComponent );
+        this.bufferPath( buffer );
+        this.stroke();
+        this.restore();
 
-            this.setStyle( renderComponent );
-            this.beginPath( );
-            this.bufferPath( edge );
-            this.closePath();
-            this.endPath();
+    }
 
-        })
+    public strokeText( node : Entity ) : void {
+        
+    }
 
+    public fillText( node : Entity ) : void {
+
+    }
+
+    public drawShape( node : Entity ) : void {
+        let renderComponent : RendererComponent = node.findComponentByClass( RendererComponent );
+        if( renderComponent.style.background != null ){
+            this.fillShape( node );
+        }else {
+            this.strokeShape( node );
+        }
     }
 
     private setProperty( name : string , value : any ) : void {
@@ -210,7 +228,45 @@ class CanvasRenderSystem extends RenderSystem {
 
     }
 
-    update(deltaTime: number): void {
+    private createBuffer( node : Entity ) : boolean {
+
+        let shapeComponent : ShapeComponent = node.findComponentByClass( ShapeComponent );
+        let transformComponent : TransformComponent = node.findComponentByClass( TransformComponent );
+        let renderComponent : RendererComponent = node.findComponentByClass( RendererComponent );
+
+        if( !shapeComponent || !transformComponent ) return false;
+
+        shapeComponent.updateFix();
+
+        let points = shapeComponent.getPoints();
+        let buffer : RenderBuffer = null;
+
+        // read buffer or create buffer according the entity 
+        if( !this.mapedRenderBuffer.has( node.uuid ) ){
+
+            buffer = new RenderBuffer( Matrix3.TransformSequence( transformComponent.transformShapeWorld, points ) , node );
+            this.mapedRenderBuffer.set( node.uuid , buffer );
+            this.orderedRenderBuffer.push( buffer );
+
+            if( renderComponent.style.background == null ) buffer.filled = false;
+
+        }else{
+            buffer = this.mapedRenderBuffer.get( node.uuid );
+        }
+
+        return true;
+    }
+
+    public readOrderedBuffer() : PriorityQueue< RenderBuffer >{
+        return this.orderedRenderBuffer;
+    } 
+
+    private clearBuffer(){
+        this.mapedRenderBuffer.clear();
+        this.orderedRenderBuffer.clear();
+    }
+
+    private render(){
 
         // Build PriorityQueue to Render
 
@@ -223,120 +279,18 @@ class CanvasRenderSystem extends RenderSystem {
 
             let node : Entity = queue.at( i );
 
-            let transformComponent : TransformComponent = node.findComponentByClass( TransformComponent );
-            let shapeComponent : ShapeComponent = node.findComponentByClass( ShapeComponent );
-            let renderComponent : RendererComponent = node.findComponentByClass( RendererComponent );
-
-            // has no shape component
-            if( !shapeComponent ) continue;
-
-            shapeComponent.update( deltaTime );
-
-            let points = shapeComponent.getPoints();
-            let buffer : RenderBuffer = null;
-
-            // read buffer or create buffer according the entity 
-            if( !this.renderBuffer.has( node.uuid ) ){
-
-                buffer = new RenderBuffer( Matrix3.TransformSequence( transformComponent.transformShapeWorld, points ) , node );
-                this.renderBuffer.set( node.uuid , buffer );
-
-            }else{
-                buffer = this.renderBuffer.get( node.uuid );
+            if( this.createBuffer( node ) ){
+                this.drawShape( node );
             }
-
-            //render this shape 
-
-            if( shapeComponent.shape instanceof Path ){
-
-                this.strokeShape( buffer , renderComponent );
-
-            }else if( shapeComponent.shape instanceof Text ){
-
-                this.strokeText();
-
-            }else{
-
-                this.fillShape( buffer.getData() , renderComponent )
-
-            }
-
-            // process other component 
-            
-            let box : BoxComponent = node.findComponentByClass( BoxComponent );
-            if( box ){
-
-                // transform 
-                let border : Array< Vector3 > = box.box.getBorder();
-                border = Matrix3.TransformSequence( transformComponent.transformShapeWorld, border );
-                this.beginPath( );
-
-                this.setProperty( 'strokeStyle' , 'red' );
-
-                this.sandboxRender( () => {
-                    this.bufferPath( border );
-                }   )
-
-                this.closePath();
-                this.endPath();
-
-
-            }
-
-            let circle : CircleComponent = node.findComponentByClass( CircleComponent );
-            if( circle ){
-
-            }
-            
-
-            // render Box : false;
-            //if( borderBoxComponent && borderBoxComponent.visible ){
-                
-                // borderBoxComponent.update( deltaTime );
-                // let borderBox : BorderBox = borderBoxComponent.borderBox;
-                // let borderCircle : BorderCircle = borderBoxComponent.borderCircle;
-                // let box : Array< Vector > = Matrix.TransformSequence( borderBoxComponent.transform , borderBox.getBorder() );
-                // let circle : Array < Vector > = Matrix.TransformSequence( borderBoxComponent.transform , borderCircle.getBorder() );
-                // // box 
-                // this.save();
-
-                // this.beginPath( Color.Black )
-
-                // this.pen.lineWidth = 1;
-                // this.pen.lineDashOffset = borderBoxComponent.dash
-                // this.pen.setLineDash([4,4]);
-
-                // this.bufferPath( box );
-                // this.closePath();
-                // this.endPath();
-
-                // this.restore();
-                
-                
-                // // circle
-                // this.save();
-
-                // this.beginPath( Color.Black )
-
-                // this.pen.lineWidth = 1;
-                // this.pen.lineDashOffset = borderBoxComponent.dash
-                // this.pen.setLineDash([4,4]);
-
-                // this.bufferPath( circle );
-                // this.closePath();
-                // this.endPath();
-
-                // this.restore();
-
-                // borderBoxComponent.dash += 1
-                // borderBoxComponent.dash %= 8;
-
-            // }
-
-            // TODO : render the shape according to the Cache and Render Component
 
         }
     }
+
+    update(deltaTime: number): void {
+        this.render();
+    }
+
+
 
 }
 

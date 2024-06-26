@@ -17,17 +17,24 @@ abstract class SystemBase {
     
     public update( deltaTime : number ) {}
 
+
+    public static ClearBuffer() : void {
+        
+        SystemBase.EntityMapBuffer.clear();
+        SystemBase.EntityBuffer.clear();
+
+    }
+
     // static
-    static enQueue( painter : CanvasPainter ) : void {
+    public static CreateBuffer( painter : CanvasPainter ) : void {
 
         // this.queue.clear();
-        let map : Map<string , boolean > = new Map<string , boolean>();
 
         let process = ( node : Entity ) => {
 
-            if( !map.has( node.uuid ) ){
+            if( !SystemBase.EntityMapBuffer.has( node.uuid ) ){
                 SystemBase.EntityBuffer.push( node );
-                map.set( node.uuid , true );
+                SystemBase.EntityMapBuffer.set( node.uuid , node );
             }
 
             let list : ArrayList< Entity > = node.children;
@@ -43,6 +50,7 @@ abstract class SystemBase {
 
     }
 
+    static EntityMapBuffer : Map< string , Entity > = new Map< string , Entity >
     static EntityBuffer : PriorityQueue< Entity > = new PriorityQueue< Entity >;
 
 }

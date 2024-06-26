@@ -121,15 +121,10 @@ class Application {
 
     update( deltaTime : number ) : void {
 
-        SystemBase.enQueue( this.painter );
+        SystemBase.CreateBuffer( this.painter );
         this.transformSystem.update( deltaTime );
         this.physics.update( deltaTime );
         this.renderSystem.update( deltaTime );
-
-        // ellipse.transform.rotate( .05 );
-        SystemBase.EntityBuffer.clear();
-
-        // console.log( SystemBase.EntityBuffer )
 
     }
 
@@ -142,7 +137,6 @@ class Application {
             let deltaTime = Timer.getDelteTime();
             this.update( deltaTime );
             // this.painter.transform.rotate( .01 );
-            // console.log( this.painter.transform.needUpdate )
             
         }
         _update();
@@ -273,6 +267,7 @@ class Application {
         let shapeComponent : ShapeComponent = new ShapeComponent( poly );
         let entity : Entity = new Entity();
         entity.addComponent( shapeComponent );
+        entity.findComponentByClass( RendererComponent ).style.background = null;
         return entity ;
 
     }
