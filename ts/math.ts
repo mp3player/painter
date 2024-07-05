@@ -1,4 +1,4 @@
-import { Stack } from "./collection.js";
+import { Stack } from "./container/collection.js";
 import { Vector3 } from "./vector.js";
 
 class GMath {

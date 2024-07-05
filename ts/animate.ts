@@ -1,5 +1,5 @@
-import { ArrayList } from './collection.js';
-import { Tool } from './util.js'
+import { ArrayList } from './container/collection.js';
+import { Tool } from './utils/util.js'
 import { Color } from './style.js'
 import { Vector3 } from './vector.js';
 

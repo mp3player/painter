@@ -1,24 +1,22 @@
-import { ArrayList } from "./collection.js";
+import { ArrayList } from "./container/collection.js";
 import { CircleComponent } from "./component/circle.js";
 import { Component } from "./component/component.js";
 import { RendererComponent } from "./component/render.js";
 import { TransformComponent } from "./component/transform.js";
-import { Tool } from "./util.js";
+import { Tool } from "./utils/util.js";
 
 
 class Entity {
 
     public components : ArrayList< Component > = new ArrayList< Component >();
     public transform : TransformComponent = new TransformComponent( 'transform' );
-    protected _index : number;
+
     protected _uuid : string;
+    public index : number = 1;    
+    public name : string = 'entity';
 
     public children : ArrayList< Entity > = new ArrayList< Entity >;
     public parent : Entity;
-
-    public set index( _index : number ) { this._index = _index; }
-
-    public get index( ) { return this._index ;}
 
     public get uuid() { return this._uuid ; };
 

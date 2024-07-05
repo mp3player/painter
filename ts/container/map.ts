@@ -14,9 +14,9 @@ class TreeNode< T , S >{
 
     public key : T ;
     public value : S ;
-    public parent : TreeNode<T , S>  | null ;
-    public left : TreeNode<T , S > | null ;
-    public right : TreeNode<T , S> | null ;
+    public parent : TreeNode<T , S>  | any ;
+    public left : TreeNode<T , S > | any ;
+    public right : TreeNode<T , S> | any ;
     public factor : number ;
     public symbol : Boolean ;
     
@@ -35,10 +35,9 @@ class TreeNode< T , S >{
 
 };
 
-abstract class TreeMap<T , S> {
+class TreeMap<T , S> {
 
     public root : TreeNode<T , S> | null;
-
 
     protected comp : Function;
     protected _size : number;
@@ -136,6 +135,7 @@ abstract class TreeMap<T , S> {
         }
 
         this._size -= 1;
+        return true;
 
     }
 
@@ -282,13 +282,15 @@ abstract class TreeMap<T , S> {
         return node;
     }
 
-
-
 }
 
 class AVLTreeMap<T , S> extends TreeMap<T , S> {
 
-    add( key : T , value : S ) : boolean  {
+    public arr : any = [];
+
+    public add( key : T , value : S ) : boolean  {
+
+        this.arr.push( key )
         
         if( super.has( key ) ){
             super.set( key , value );
@@ -317,7 +319,7 @@ class AVLTreeMap<T , S> extends TreeMap<T , S> {
 
     }
 
-    depth( node : TreeNode< T , S > ) : number {
+    private depth( node : TreeNode< T , S > ) : number {
     
         let fn : Function = ( node : TreeNode<T , S > ) : number => {
             if( node == null ) return 0;
@@ -332,7 +334,7 @@ class AVLTreeMap<T , S> extends TreeMap<T , S> {
     
     }
 
-    rotateLeft( node : TreeNode<T , S> ) : void {
+    private rotateLeft( node : TreeNode<T , S> ) : void {
         
         let r : TreeNode<T , S> = node.right;
 
@@ -354,7 +356,7 @@ class AVLTreeMap<T , S> extends TreeMap<T , S> {
 
     }
 
-    rotateRight( node : TreeNode<T , S> ) : void {
+    private rotateRight( node : TreeNode<T , S> ) : void {
         
         let l : TreeNode<T , S> = node.left;
 
@@ -378,7 +380,7 @@ class AVLTreeMap<T , S> extends TreeMap<T , S> {
 
     }
 
-    rebalance( node : TreeNode<T , S> ) : void {
+    private rebalance( node : TreeNode<T , S> ) : void {
 
         if( node.factor >= 2 ){
             // the depth of left is lager than the right
@@ -410,7 +412,7 @@ class AVLTreeMap<T , S> extends TreeMap<T , S> {
 
     }
 
-    // add the node to the tree and keep it balance
+    // add one node to the tree and keep it balance
     private put( key : T , value : S ) : TreeNode<T , S > {
         
         let newNode : TreeNode<T , S> = new TreeNode<T , S>( key , value );
@@ -438,9 +440,29 @@ class AVLTreeMap<T , S> extends TreeMap<T , S> {
         }
         newNode.parent = p;
         newNode.factor = 0;
+        this._size += 1;
         return newNode;
 
     }
+
+    public keys() : Array< T > {
+        // ordered traverse 
+        let node = this.root;
+        let results = new Array< T >();
+
+        let _traverse = ( node : TreeNode< T , S > | any ) => {
+            if( node == null ) return ;
+
+            _traverse( node.left );
+            results.push( node.key );
+            _traverse( node.right );
+        }
+
+        _traverse( node );
+
+        return results;
+    }
+
 
 
 }

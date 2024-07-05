@@ -1,5 +1,5 @@
 
-import { ArrayList } from "./collection";
+import { ArrayList } from "./container/collection";
 
 class Timer {
 

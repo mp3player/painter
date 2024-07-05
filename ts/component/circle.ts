@@ -1,4 +1,4 @@
-import { Circle } from "../util.js";
+import { Circle } from "../utils/util.js";
 import { Vector3 } from "../vector.js";
 import { BoxComponent } from "./box.js";
 import { RendererComponent } from "./render.js";

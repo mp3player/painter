@@ -365,7 +365,7 @@ class PriorityQueue<T> {
     private shiftUp( index : number ) : void {
         if( index > 0 ){
             let p : number = Math.floor( ( index - 1 ) / 2 ) ;
-            if( this.comparer( this.data.at( p ) , this.data.at( index ) ) >= 0 ){
+            if( this.comparer( this.data.at( p ) , this.data.at( index ) ) > 0 ){
                 this.swap( p , index );
                 this.shiftUp( p );
             }
@@ -427,4 +427,4 @@ class PriorityQueue<T> {
 }
 
 
-export {LinkedList , ArrayList , Stack , PriorityQueue }
+export {LinkedList , ArrayList , Stack , PriorityQueue , _Comp }

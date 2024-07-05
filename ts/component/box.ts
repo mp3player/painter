@@ -1,6 +1,6 @@
 import { Entity } from "../entity.js";
 import { Color } from "../style.js";
-import { Box } from "../util.js";
+import { Box } from "../utils/util.js";
 import { Component } from "./component.js";
 
 class BoxComponent extends Component {

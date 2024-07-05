@@ -3,6 +3,7 @@ import { CanvasPainter } from "../painter.js";
 import { SystemBase } from "./system.js";
 import { Vector3  } from "../vector.js";
 import { Entity } from "../entity.js";
+import { TransformedShapeRenderedBuffer } from "./render.js";
 
 class EventType { 
 
@@ -29,8 +30,6 @@ abstract class ActiveEvent {
         this.target = null;
     }
 }
-
-
 
 // read-only properties
 class MouseActiveEvent extends ActiveEvent{
@@ -129,7 +128,6 @@ class EventSystem extends SystemBase {
 
     public eventHandler( name : string , event : MouseActiveEvent ) : void {
 
-
         const fake : Entity = new Entity()
 
         let action = {
@@ -144,7 +142,7 @@ class EventSystem extends SystemBase {
                 current: new Vector3,
                 prev : new Vector3
             }
-            
+
         };
 
         action.screen = new Vector3( event.originEvent.x , event.originEvent.y );
@@ -158,19 +156,19 @@ class EventSystem extends SystemBase {
 
         let path : Array< _Temp >  = new Array< _Temp >();
 
-        let queue = SystemBase.EntityBuffer.getOrderedData();
-        console.log( queue.length )
+        // let transformedShapeBuffers : Array< TransformedShapeRenderedBuffer > = SystemBase.OrderedRenderBuffer.getOrderedData();
 
-        for( let i = queue.length - 1 ; i >= 0 ; --i ){
+        // for( let i = 0 ; i < transformedShapeBuffers.length ; ++i ){
 
-            let cache = queue[ i ];
-            console.log( cache )
+            // let shape : TransformedShapeRenderedBuffer = transformedShapeBuffers.at( i );
+            // console.log( shape )
+
             // let touched = isTouch( cache , action.location );
             // if( touched ){
                 // path.push( { index : cache.ref.index , shape : cache.ref } );
             // }
 
-        }
+        // }
 /*
         path.push( { index : -1 , shape : CanvasPainter } );
 

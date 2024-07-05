@@ -1,11 +1,11 @@
 import { Buffer } from "../buffer.js";
-import { ArrayList, PriorityQueue } from "../collection.js";
+import { _Comp, ArrayList, PriorityQueue } from "../container/collection.js";
 import { Entity } from "../entity.js";
 import { Matrix3 } from "../matrix.js";
 import { CanvasPainter } from "../painter.js";
 import { Path } from "../geometry.js";
 import { Color, Style } from "../style.js";
-import { SystemBase } from "./system.js";
+import { SystemBase, TransformedShapeRenderedBuffer } from "./system.js";
 import {  Vector3 } from "../vector.js";
 import { TransformComponent } from "../component/transform.js";
 import { RendererComponent } from "../component/render.js";
@@ -16,45 +16,6 @@ import { BoxComponent } from "../component/box.js";
 
 
 
-
-class RenderBuffer extends Buffer {
-
-    private _data : Array< Vector3 >
-    private _path : Path2D;
-    private _filled : boolean = true;
-    private _ref : Entity
-
-    public get path(){
-        return this._path;
-    }
-
-    public get data(){
-        return this._data;
-    }
-
-    public get ref (){
-        return this._ref;
-    }
-
-    public get filled(){
-        return this._filled;
-    }
-
-    public set filled( _filled : boolean ){
-        this._filled = _filled;
-    }
-    
-    public constructor( data : Array< Vector3 > , ref : Entity ){
-        super()
-        this._data = data;
-        this._ref = ref;
-    }
-
-    getBuffer() : Array< Vector3 > {
-        return this.data;
-    }
-
-};
 
 abstract class RenderSystem extends SystemBase {
 
@@ -81,8 +42,6 @@ abstract class RenderSystem extends SystemBase {
 
 class CanvasRenderSystem extends RenderSystem {
     
-    private mapedRenderBuffer : Map< string , RenderBuffer > = new Map< string , RenderBuffer >;
-    private orderedRenderBuffer : PriorityQueue< RenderBuffer > = new PriorityQueue< RenderBuffer>();
 
     public constructor( scene : CanvasPainter , name : string = 'render') {
         super( scene , name );
@@ -172,9 +131,9 @@ class CanvasRenderSystem extends RenderSystem {
     }
 
     private fillShape( node : Entity ) : void {
-        
+
         let renderComponent : RendererComponent = node.findComponentByClass( RendererComponent );
-        let renderBuffer : RenderBuffer = this.mapedRenderBuffer.get( node.uuid );
+        let renderBuffer : TransformedShapeRenderedBuffer = SystemBase.MapedRenderBuffer.get( node.uuid );
         let buffer : Array<Vector3> = renderBuffer.getBuffer();
 
         this.save();
@@ -190,7 +149,7 @@ class CanvasRenderSystem extends RenderSystem {
     private strokeShape( node : Entity ) : void {
 
         let renderComponent = node.findComponentByClass( RendererComponent );
-        let buffer : Array<Vector3 > = this.mapedRenderBuffer.get( node.uuid ).getBuffer();
+        let buffer : Array<Vector3 > = SystemBase.MapedRenderBuffer.get( node.uuid ).getBuffer();
 
         this.save();
         this.beginPath();
@@ -210,12 +169,14 @@ class CanvasRenderSystem extends RenderSystem {
     }
 
     public drawShape( node : Entity ) : void {
+        
         let renderComponent : RendererComponent = node.findComponentByClass( RendererComponent );
         if( renderComponent.style.background != null ){
             this.fillShape( node );
         }else {
             this.strokeShape( node );
         }
+
     }
 
     private setProperty( name : string , value : any ) : void {
@@ -228,58 +189,18 @@ class CanvasRenderSystem extends RenderSystem {
 
     }
 
-    private createBuffer( node : Entity ) : boolean {
-
-        let shapeComponent : ShapeComponent = node.findComponentByClass( ShapeComponent );
-        let transformComponent : TransformComponent = node.findComponentByClass( TransformComponent );
-        let renderComponent : RendererComponent = node.findComponentByClass( RendererComponent );
-
-        if( !shapeComponent || !transformComponent ) return false;
-
-        shapeComponent.updateFix();
-
-        let points = shapeComponent.getPoints();
-        let buffer : RenderBuffer = null;
-
-        // read buffer or create buffer according the entity 
-        if( !this.mapedRenderBuffer.has( node.uuid ) ){
-
-            buffer = new RenderBuffer( Matrix3.TransformSequence( transformComponent.transformShapeWorld, points ) , node );
-            this.mapedRenderBuffer.set( node.uuid , buffer );
-            this.orderedRenderBuffer.push( buffer );
-
-            if( renderComponent.style.background == null ) buffer.filled = false;
-
-        }else{
-            buffer = this.mapedRenderBuffer.get( node.uuid );
-        }
-
-        return true;
-    }
-
-    public readOrderedBuffer() : PriorityQueue< RenderBuffer >{
-        return this.orderedRenderBuffer;
-    } 
-
-    private clearBuffer(){
-        this.mapedRenderBuffer.clear();
-        this.orderedRenderBuffer.clear();
-    }
-
     private render(){
 
-        // Build PriorityQueue to Render
-
-        // clear RenderContent
         this.flush();
 
-        // render the queue in order
-        let queue : Array< Entity > = SystemBase.EntityBuffer.getOrderedData();
+        let queue : Array< Entity > = SystemBase.EntityOrderedList.getOrderedData();
+
+
         for( let i = 0 ; i < queue.length ; ++ i  ){
 
             let node : Entity = queue.at( i );
 
-            if( this.createBuffer( node ) ){
+            if( SystemBase.CreateRenderBuffer( node ) ){
                 this.drawShape( node );
             }
 
@@ -295,4 +216,4 @@ class CanvasRenderSystem extends RenderSystem {
 }
 
 
-export { CanvasRenderSystem }
+export { CanvasRenderSystem  , TransformedShapeRenderedBuffer }

@@ -1,20 +1,19 @@
 import { Timer } from './timer.js'
 import { CanvasPainter } from './painter.js'
-import { Circle , Rectangle , Polygon , Ellipse , Path , Text } from './geometry.js';
+import { Circle  , Polygon , Ellipse , Path  } from './geometry.js';
 import { Color } from './style.js';
 import { Vector3 } from './vector.js';
-import { ActiveEvent , EventSystem, MouseActiveEvent } from './system/event.js';
+import { EventSystem, MouseActiveEvent } from './system/event.js';
 import { TransformSystem } from './system/transform.js';
 import { Entity } from './entity.js';
 
 import { PhysicsSystem } from './system/physics.js';
-import { CanvasRenderSystem } from './system/render.js'
-import { Geometry } from './geometry.js';
+import { CanvasRenderSystem, TransformedShapeRenderedBuffer } from './system/render.js'
 import { RendererComponent } from './component/render.js';
 import { ShapeComponent } from './component/shape.js';
 import { BoxComponent } from './component/box.js';
-import { Matrix3 } from './matrix.js';
 import { SystemBase } from './system/system.js';
+import { PriorityQueue } from './container/collection.js';
 
 
 let ellipse : Entity;
@@ -70,6 +69,8 @@ class Application {
         ellipse = Application.createEllipse( 100 , 50 );
         ellipse.transform.translate( new Vector3( 100 , 200 ) );
         this.painter.add( ellipse );
+        ellipse.findComponentByClass( RendererComponent ).style.background = Color.Red;
+        ellipse.name = 'ellipses'
 
         let box = new BoxComponent();
         box.setSize( 300 , 300 );
@@ -84,6 +85,10 @@ class Application {
             let y = vertexes[i + 1];
             poly.push( new Vector3( x , y ) );
         }
+
+        let rect = Application.createEllipse( 200 , 50 );
+        rect.findComponentByClass( RendererComponent).style.background = Color.Red;
+        this.painter.add( rect );
 
 
 
@@ -121,7 +126,9 @@ class Application {
 
     update( deltaTime : number ) : void {
 
-        SystemBase.CreateBuffer( this.painter );
+        // create a list consists of the all entities in this.painter
+        SystemBase.CreateEntityList( this.painter );
+
         this.transformSystem.update( deltaTime );
         this.physics.update( deltaTime );
         this.renderSystem.update( deltaTime );
@@ -130,14 +137,12 @@ class Application {
 
     run() : void {
 
+        let i = 0 ;
         let _update = () => {
-
             requestAnimationFrame( _update );
-            
             let deltaTime = Timer.getDelteTime();
             this.update( deltaTime );
-            // this.painter.transform.rotate( .01 );
-            
+            this.painter.transform.rotate( .01 );
         }
         _update();
 
@@ -153,6 +158,8 @@ class Application {
     
         })
 
+        let buffers :PriorityQueue< TransformedShapeRenderedBuffer > = SystemBase.OrderedRenderBuffer;
+
         this.context.canvas?.addEventListener('mousedown' , (e : MouseEvent) => {
 
             let screenLocation : Vector3 = new Vector3( e.x , e.y );
@@ -160,8 +167,9 @@ class Application {
             let event : any = new MouseActiveEvent( e , 'mousedown' , painterLocation );
 
             this.eventSystem.invokeMouseEvent( 'mousedown' , event );
-            this.eventSystem.invokeMouseEvent( 'dragstart' , event );
-    
+            // this.eventSystem.invokeMouseEvent( 'dragstart' , event  );
+
+
         });
     
         this.context.canvas?.addEventListener('mousemove' , (e : MouseEvent) => {
@@ -181,8 +189,8 @@ class Application {
             let painterLocation = screenLocation.applyTransform( this.painter.transform.inverseTransformShape );
             let event : any = new MouseActiveEvent( e , 'mousedown' , painterLocation );
 
-            this.eventSystem.invokeMouseEvent( 'mouseup' , event );
-            this.eventSystem.invokeMouseEvent( 'drop' , event );
+            // this.eventSystem.invokeMouseEvent( 'mouseup' , event );
+            // this.eventSystem.invokeMouseEvent( 'drop' , event );
     
         })
     
@@ -200,7 +208,7 @@ class Application {
             let painterLocation = screenLocation.applyTransform( this.painter.transform.inverseTransformShape );
             let event : any = new MouseActiveEvent( e , 'mousedown' , painterLocation );
             
-            this.eventSystem.invokeMouseEvent( 'mousewheel' , event );
+            // this.eventSystem.invokeMouseEvent( 'mousewheel' , event );
 
         })
 

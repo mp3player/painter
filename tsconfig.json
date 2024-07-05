@@ -10,13 +10,16 @@
       "outDir": "./dist/"
     },
     "files": [
-        "ts/collection.ts",
+
+        "ts/container/collection.ts",
+        "ts/container/map.ts",
+
         "ts/system/event.ts",
         "ts/geometry.ts",
         "ts/noise.ts",
         "ts/painter.ts",
         "ts/style.ts",
-        "ts/util.ts",
+        "ts/utils/util.ts",
         "ts/vector.ts",
         "ts/matrix.ts",
         "ts/pdf.ts",
