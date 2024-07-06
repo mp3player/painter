@@ -158,6 +158,10 @@ class Vector3{
         return v1.sub(v0).length();
     }
 
+    static CrossProduct( v0 : Vector3 , v1 : Vector3 ){
+        return v0.clone().cross( v1 );
+    }
+
     /**
      * r  : i , j , k
      * v0 : x , y , 1

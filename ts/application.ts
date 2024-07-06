@@ -142,7 +142,7 @@ class Application {
             requestAnimationFrame( _update );
             let deltaTime = Timer.getDelteTime();
             this.update( deltaTime );
-            this.painter.transform.rotate( .01 );
+            // this.painter.transform.rotate( .01 );
         }
         _update();
 

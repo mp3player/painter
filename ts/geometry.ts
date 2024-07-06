@@ -118,7 +118,128 @@ class Geometry {
 
     }
 
+    // geometry 
+    static getSlop( v0 : Vector3 , v1 : Vector3) : number {
+        if( v0.x == v1.x ) return Number.POSITIVE_INFINITY;
+        return ( v1.y - v0.y ) / ( v1.x - v0.x );
+    }
+
+    // intersection( line0 , line1 )
+    static isLineIntersected( p0 : Vector3, p1 : Vector3, p2 : Vector3, p3 : Vector3 ) : boolean {
+
+        // l0 => p0 : upper , p1 : lower
+        // l1 => p2 : upper , p3 : lower
+        
+        let v0 = p2.sub(p1); // ( l1->upper - l0->lower , 1.0f );
+        let v1 = p0.sub(p2)//( l0->upper - l1->upper , 1.0f );
+        let v2 = p3.sub(p0)//( l1->lower - l0->upper , 1.0f );
+        let v3 = p1.sub(p3)//( l0->lower - l1->lower , 1.0f );
     
+        let c0z : number = Vector3.CrossProduct(v0,v1).z;
+        let c1z : number = Vector3.CrossProduct(v1,v2).z;
+        let c2z : number = Vector3.CrossProduct(v2,v3).z;
+        let c3z : number = Vector3.CrossProduct(v3,v0).z;
+
+        if( c0z > 0 && c1z > 0 && c2z > 0 && c3z > 0 || c0z < 0 && c1z < 0 && c2z < 0 && c3z < 0 ){
+            return true;
+        }
+        return false;
+    }
+
+    // intersection( center , radius , point )
+    static IsPointInCircle( center : Vector3, radius : number  , point : Vector3) : boolean {
+
+        let dis = Vector3.SquaDist(center , point);
+        if(dis > radius * radius)
+            return false;
+        return true;
+
+    }
+
+    // intersection( a , b , point )
+    static IsPoingInEllipse( a : number , b : number , point : Vector3) : boolean {
+        return false;
+    }
+
+
+    static isPointInLine( p0 : Vector3, p1 : Vector3, point : Vector3, eps = 1.0 ) : boolean {
+
+        if( p0.x == p1.x ){
+            // vertical line
+            let min = p0.y > p1.y ? p1.y : p0.y;
+            let max = p0.y > p1.y ? p0.y : p1.y;
+            if( point.y > min - eps && point.y < max + eps && point.x > p0.x - eps && point.y < p0.x - eps ) return true;
+            return false; 
+        }
+
+        let min = p0.x > p1.x ? p1.x : p0.x;
+        let max = p0.x > p1.x ? p0.x : p1.x;
+
+        if( point.x < min - eps || point.y > max + eps  ) return false;
+
+        let k = ( p1.y - p0.y ) / ( p1.x - p0.x );
+        let b = p0.y - k * p0.x;
+        let y = k * point.x + b;
+        let error = y - point.y;
+        if( error * error < eps * eps )return true;
+
+        return false;
+
+    }
+
+    static isPointInPath( edge : Array< Vector3> , point : Vector3, eps = 1.0) : boolean {
+        for( let i = 1 ; i < edge.length ; ++i ){
+            if( this.isPointInLine( edge[ i - 1 ] , edge[i] , point , eps ) ) return true;
+        }
+        return false;
+    }
+
+    static IsPointInRect( edge : Array<Vector3> , point : Vector3) : boolean {
+
+        let left = edge[0].x , right = edge[0].x , top = edge[0].y , bottom = edge[0].y;
+        for( let i = 1 ; i < edge.length ; ++ i ){
+            let vertex = edge[i];
+            if( left > vertex.x ) left = vertex.x ;
+            else if( right < vertex.x ) right = vertex.x ;
+
+            if( top < vertex.y ) top = vertex.y;
+            else if ( bottom > vertex.y ) bottom = vertex.y;
+
+        }
+
+        return ( point.x >= left && point.x <= right && point.y >= bottom && point.y <= top)
+    }
+
+    static IsPointInPolygon( edge : Array<Vector3> , point : Vector3 ) : boolean {
+
+        let count = edge.length;
+        let flag = false;
+        for(let i = 0 , j = count - 1  ; i < count ; j = i ++){
+            let p0 = edge[j] ; 
+            let p1 = edge[i];
+
+            if( (point.x - p0.x) * (point.x - p1.x) > 0 ){
+                continue;
+            }
+
+            let deltaY = p1.y - p0.y;
+            let deltaX = p1.x - p0.x;
+            if(deltaX == 0){
+                if(point.x == p1.x)
+                    flag = !flag;
+                    continue;
+            }
+            let k = deltaY / deltaX;
+            let d = p0.y - k * p0.x;
+
+            let pY = k * point.x + d;
+            if(pY > point.y)
+                flag = !flag;
+
+        }
+        return flag;
+    }
+
 
 }
 

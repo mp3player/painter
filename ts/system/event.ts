@@ -1,6 +1,6 @@
 import { Shape } from "../geometry.js";
 import { CanvasPainter } from "../painter.js";
-import { SystemBase } from "./system.js";
+import { isPointInShape, SystemBase } from "./system.js";
 import { Vector3  } from "../vector.js";
 import { Entity } from "../entity.js";
 import { TransformedShapeRenderedBuffer } from "./render.js";
@@ -156,19 +156,15 @@ class EventSystem extends SystemBase {
 
         let path : Array< _Temp >  = new Array< _Temp >();
 
-        // let transformedShapeBuffers : Array< TransformedShapeRenderedBuffer > = SystemBase.OrderedRenderBuffer.getOrderedData();
+        let transformedShapeBuffers : Array< TransformedShapeRenderedBuffer > = SystemBase.OrderedRenderBuffer.getOrderedData();
+        
+        for( let i = 0 ; i < transformedShapeBuffers.length ; ++i ){
 
-        // for( let i = 0 ; i < transformedShapeBuffers.length ; ++i ){
+            let shape : TransformedShapeRenderedBuffer = transformedShapeBuffers.at( i );
+            
+            console.log( isPointInShape( shape , action.screen ) );
 
-            // let shape : TransformedShapeRenderedBuffer = transformedShapeBuffers.at( i );
-            // console.log( shape )
-
-            // let touched = isTouch( cache , action.location );
-            // if( touched ){
-                // path.push( { index : cache.ref.index , shape : cache.ref } );
-            // }
-
-        // }
+        }
 /*
         path.push( { index : -1 , shape : CanvasPainter } );
 

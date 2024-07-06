@@ -7,13 +7,15 @@ import { Entity } from "../entity.js";
 import { Matrix3 } from "../matrix.js";
 import { CanvasPainter } from "../painter.js";
 import { Vector3 } from "../vector.js";
+import { Geometry, Shape, ShapeType } from "../geometry.js";
 
-// render buffer 
+// this is the container of render buffer 
 class TransformedShapeRenderedBuffer extends Buffer {
 
     private _data : Array< Vector3 > ;
     private _filled : boolean = true;
     private _ref : Entity ;
+    private _shape : Shape
 
     public needUpdate : boolean = true ;
 
@@ -25,6 +27,10 @@ class TransformedShapeRenderedBuffer extends Buffer {
         return this._ref;
     }
 
+    public get shape(){
+        return this._shape;
+    }
+
     public get filled(){
         return this._filled;
     }
@@ -33,7 +39,7 @@ class TransformedShapeRenderedBuffer extends Buffer {
         this._filled = _filled;
     }
     
-    public constructor( data : Array< Vector3 > , ref : Entity ){
+    public constructor( data : Array< Vector3 > , ref : Entity , shape : Shape ){
         super()
         this._data = data;
         this._ref = ref;
@@ -47,7 +53,7 @@ class TransformedShapeRenderedBuffer extends Buffer {
 
 
 
-// according the index 
+// this compartor is used to determine the processing order of the entity
 let _EntityCompartor : _Comp<Entity> = ( node0 : Entity , node1 : Entity ) => {
     if( node0.index > node1.index ) return 1;
     else if( node0.index == node1.index ) return 0;
@@ -56,11 +62,17 @@ let _EntityCompartor : _Comp<Entity> = ( node0 : Entity , node1 : Entity ) => {
 
 
 
-
+// this compartoer is used to determine the render order of the render buffer
 let _TransformedShapeCompartor : _Comp< TransformedShapeRenderedBuffer > = ( node0 : TransformedShapeRenderedBuffer , node1 : TransformedShapeRenderedBuffer ) => {
     if( node0.ref.index < node1.ref.index ) return 1;
     else if( node0.ref.index == node1.ref.index ) return 0;
     return -1;
+}
+
+
+// 
+function isPointInShape( shapeBuffer : TransformedShapeRenderedBuffer , point : Vector3  ) : boolean {
+    return Geometry.IsPointInPolygon( shapeBuffer.data , point );
 }
 
 
@@ -119,7 +131,7 @@ abstract class SystemBase {
         // has no 
         if( !SystemBase.MapedRenderBuffer.has( node.uuid ) ){
 
-            buffer = new TransformedShapeRenderedBuffer( Matrix3.TransformSequence( transformComponent.transformShapeWorld, points ) , node );
+            buffer = new TransformedShapeRenderedBuffer( Matrix3.TransformSequence( transformComponent.transformShapeWorld, points ) , node , shapeComponent.shape );
             
             SystemBase.MapedRenderBuffer.set( node.uuid , buffer );
 
@@ -165,4 +177,4 @@ abstract class SystemBase {
 }
 
 
-export { SystemBase , TransformedShapeRenderedBuffer }
+export { SystemBase , TransformedShapeRenderedBuffer , isPointInShape }
