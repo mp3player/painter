@@ -1,8 +1,4 @@
-import { Grid } from "./component/grid.js";
-import { TransformComponent } from "./component/transform.js";
 import { Entity } from "./entity.js";
-import { Matrix3 } from "./matrix.js";
-import { Vector3 } from "./vector.js";
 
 /**
  * render:

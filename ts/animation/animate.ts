@@ -1,7 +1,7 @@
-import { ArrayList } from './container/collection.js';
-import { Tool } from './utils/util.js'
-import { Color } from './style.js'
-import { Vector3 } from './vector.js';
+import { ArrayList } from '../container/list/collection.js';
+import { Tool } from '../utils/util.js'
+import { Color } from '../style.js'
+import { Vector3 } from '../math/vector.js';
 
 
 type BlendFunction = ( percent : number  ) => number;

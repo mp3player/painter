@@ -1,19 +1,21 @@
 import { Timer } from './timer.js'
 import { CanvasPainter } from './painter.js'
-import { Circle  , Polygon , Ellipse , Path  } from './geometry.js';
 import { Color } from './style.js';
-import { Vector3 } from './vector.js';
+import { Vector3 } from './math/vector.js';
 import { EventSystem, MouseActiveEvent } from './system/event.js';
 import { TransformSystem } from './system/transform.js';
 import { Entity } from './entity.js';
 
-import { PhysicsSystem } from './system/physics.js';
 import { CanvasRenderSystem, TransformedShapeRenderedBuffer } from './system/render.js'
-import { RendererComponent } from './component/render.js';
-import { ShapeComponent } from './component/shape.js';
-import { BoxComponent } from './component/box.js';
+import { RendererComponent } from './component/render/render.js';
+import { GeometryComponent } from './component/shapes/shape.js';
+import { BoxComponent } from './component/shapes/box.js';
 import { SystemBase } from './system/system.js';
-import { PriorityQueue } from './container/collection.js';
+import { PriorityQueue } from './container/list/collection.js';
+import { Circle } from './geometry/arc.js';
+import { Ellipse } from './geometry/ellipse.js';
+import { Polygon } from './geometry/polygon.js';
+import { Path } from './geometry/path.js';
 
 
 let ellipse : Entity;
@@ -29,7 +31,6 @@ class Application {
     private renderSystem : CanvasRenderSystem ;
     private transformSystem : TransformSystem ;
     private eventSystem : EventSystem ;
-    private physics : PhysicsSystem ;
 
     private constructor( ){
 
@@ -45,15 +46,12 @@ class Application {
         this.renderSystem = new CanvasRenderSystem( this.painter , 'render' );
         this.transformSystem = new TransformSystem( this.painter , 'transform' );
         this.eventSystem = new EventSystem( this.painter , 'event' );
-        this.physics = new PhysicsSystem( this.painter , 'physics' );
-
         this.width = innerWidth;
         this.height = innerHeight;
 
         this.renderSystem.setContext( this.context );
 
         this.init();
-
         this.dispatchEvent()
 
     }
@@ -130,7 +128,6 @@ class Application {
         SystemBase.CreateEntityList( this.painter );
 
         this.transformSystem.update( deltaTime );
-        this.physics.update( deltaTime );
         this.renderSystem.update( deltaTime );
 
     }
@@ -234,7 +231,7 @@ class Application {
     static createCircle( radius : number ) : Entity {
         
         let circle = new Circle( radius );
-        let shapeComponent : ShapeComponent = new ShapeComponent( circle );
+        let shapeComponent : GeometryComponent = new GeometryComponent( circle );
         let entity : Entity = new Entity();
         entity.addComponent( shapeComponent );
         return entity ;
@@ -244,7 +241,7 @@ class Application {
     static createEllipse( a : number , b : number ) : Entity {
         
         let ellipse = new Ellipse( a , b );
-        let shapeComponent : ShapeComponent = new ShapeComponent( ellipse );
+        let shapeComponent : GeometryComponent = new GeometryComponent( ellipse );
         let entity : Entity = new Entity();
         entity.addComponent( shapeComponent );
         return entity ;
@@ -255,7 +252,7 @@ class Application {
         
         let poly = new Polygon( path );
 
-        let shapeComponent : ShapeComponent = new ShapeComponent( poly );
+        let shapeComponent : GeometryComponent = new GeometryComponent( poly );
         let entity : Entity = new Entity();
         entity.addComponent( shapeComponent );
         return entity ;
@@ -272,7 +269,7 @@ class Application {
             poly.append( new Vector3( x , y ) );
         }
 
-        let shapeComponent : ShapeComponent = new ShapeComponent( poly );
+        let shapeComponent : GeometryComponent = new GeometryComponent( poly );
         let entity : Entity = new Entity();
         entity.addComponent( shapeComponent );
         entity.findComponentByClass( RendererComponent ).style.background = null;
@@ -284,7 +281,7 @@ class Application {
 
         let poly = new Polygon( points );
 
-        let shapeComponent : ShapeComponent = new ShapeComponent( poly );
+        let shapeComponent : GeometryComponent = new GeometryComponent( poly );
 
         let entity : Entity = new Entity();
 

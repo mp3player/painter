@@ -1,7 +1,7 @@
-import { ArrayList } from "./container/collection.js";
-import { CircleComponent } from "./component/circle.js";
+import { ArrayList } from "./container/list/collection.js";
+import { CircleComponent } from "./component/shapes/circle.js";
 import { Component } from "./component/component.js";
-import { RendererComponent } from "./component/render.js";
+import { RendererComponent } from "./component/render/render.js";
 import { TransformComponent } from "./component/transform.js";
 import { Tool } from "./utils/util.js";
 

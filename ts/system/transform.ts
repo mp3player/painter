@@ -1,4 +1,4 @@
-import { ArrayList } from "../container/collection.js";
+import { ArrayList } from "../container/list/collection.js";
 import { TransformComponent } from "../component/transform.js";
 import { Entity } from "../entity.js";
 import { CanvasPainter } from "../painter.js";

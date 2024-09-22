@@ -1,9 +1,11 @@
-import { Shape } from "../geometry.js";
+
 import { CanvasPainter } from "../painter.js";
 import { isPointInShape, SystemBase } from "./system.js";
-import { Vector3  } from "../vector.js";
+import { Vector3  } from "../math/vector.js";
 import { Entity } from "../entity.js";
 import { TransformedShapeRenderedBuffer } from "./render.js";
+import { Geometry } from "../geometry/geometry.js";
+
 
 class EventType { 
 
@@ -151,7 +153,7 @@ class EventSystem extends SystemBase {
 
         interface _Temp {
             index : number ,
-            shape : Shape 
+            shape : Geometry 
         };
 
         let path : Array< _Temp >  = new Array< _Temp >();

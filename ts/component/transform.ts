@@ -1,6 +1,6 @@
 import { Component } from "./component.js";
-import { Matrix3 } from "../matrix.js";
-import { Vector3 } from "../vector.js";
+import { Matrix3 } from "../math/matrix.js";
+import { Vector3 } from "../math/vector.js";
 
 
 class TransformComponent extends Component {
@@ -25,7 +25,7 @@ class TransformComponent extends Component {
     private transformShapeNeedUpdate : boolean = true ;
     private transformWorldNeedUpdate : boolean = true;
     
-    public updateOnce( deltaTime: number ): void {
+    public update( deltaTime: number ): void {
 
         if( this.transformShapeNeedUpdate == true ){
             // debugger
@@ -50,6 +50,7 @@ class TransformComponent extends Component {
         }else{
             this._needUpdate = false;
         }
+        
     }
 
     // update Local Transform according the translation, scale and rotation

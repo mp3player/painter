@@ -1,22 +1,15 @@
-import { Buffer } from "../buffer.js";
-import { _Comp, ArrayList, PriorityQueue } from "../container/collection.js";
+import { _Comp} from "../container/list/collection.js";
 import { Entity } from "../entity.js";
-import { Matrix3 } from "../matrix.js";
 import { CanvasPainter } from "../painter.js";
-import { Path } from "../geometry.js";
-import { Color, Style } from "../style.js";
+import { Style } from "../style.js";
 import { SystemBase, TransformedShapeRenderedBuffer } from "./system.js";
-import {  Vector3 } from "../vector.js";
-import { TransformComponent } from "../component/transform.js";
-import { RendererComponent } from "../component/render.js";
-import { ShapeComponent } from "../component/shape.js";
-import { CircleComponent } from "../component/circle.js";
-import { BoxComponent } from "../component/box.js";
+import {  Vector3 } from "../math/vector.js";
+import { RendererComponent } from "../component/render/render.js";
 
 
 
 
-
+// basic system to render the painter 
 abstract class RenderSystem extends SystemBase {
 
     protected _context : any;
@@ -40,6 +33,7 @@ abstract class RenderSystem extends SystemBase {
 
 }
 
+// render system implemented using canvas
 class CanvasRenderSystem extends RenderSystem {
     
 
@@ -86,6 +80,7 @@ class CanvasRenderSystem extends RenderSystem {
 
     }
 
+    // invoke of the plain canvas function
     public moveTo( point : Vector3 ) : void {
         this._context.moveTo( point.x , point.y );
     }
